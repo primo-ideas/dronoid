@@ -1,0 +1,11 @@
+[package]
+name = "dronoid-logger"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+bson = { workspace = true, features = ["serde", "compat-3-0-0"] }
+colored.workspace = true
+serde.workspace = true
+tracing.workspace = true
+tracing-subscriber = { workspace = true, features = ["env-filter", "registry"] }

@@ -1,0 +1,34 @@
+[package]
+name = "dronoid-server"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+dronoid-logger.workspace = true
+dronoid-protocol.workspace = true
+
+anyhow.workspace = true
+bevy = { workspace = true, features = ["std", "multi_threaded", "dynamic_linking"] }
+bevy_app.workspace = true
+bevy_ecs.workspace = true
+bson = { workspace = true, features = ["serde"] }
+clap = { workspace = true, features = ["derive", "std", "help", "usage", "env"] }
+crossbeam-channel = { workspace = true, features = ["std"] }
+futures.workspace = true
+noise.workspace = true
+rand.workspace = true
+rapier2d.workspace = true
+serde.workspace = true
+thiserror.workspace = true
+tokio = { workspace = true, features = [
+    "time",
+    "macros",
+    "rt",
+    "sync",
+    "test-util",
+    "rt-multi-thread",
+    "signal",
+] }
+tokio-tungstenite = { workspace = true, features = ["handshake", "connect"] }
+tracing.workspace = true
+tungstenite.workspace = true
