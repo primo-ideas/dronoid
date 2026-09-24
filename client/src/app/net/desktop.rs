@@ -170,7 +170,6 @@ pub fn read_server_messages(
     mut connection: ResMut<Connection>,
     mut server_messages: MessageWriter<ServerMessage>,
 ) {
-    // while connection.0.can_read() {
     while let Ok(Message::Binary(message)) = connection.0.read() {
         let server_message = bson::deserialize_from_slice::<dronoid_protocol::ServerMessage>(
             &message.iter().as_slice(),
@@ -179,7 +178,6 @@ pub fn read_server_messages(
 
         server_messages.write(ServerMessage(server_message));
     }
-    // }
 }
 
 pub fn send_actions(mut connection: ResMut<Connection>, mut actions: MessageReader<ActionMessage>) {

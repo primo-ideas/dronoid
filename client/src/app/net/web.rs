@@ -89,7 +89,6 @@ pub fn authenticate_send_request(
     use dronoid_protocol::ClientMessage;
     use web_sys::WebSocket;
 
-    // let mut info_label = q_info_label.iter_mut().next().unwrap();
     if r_connection.websocket.ready_state() != WebSocket::OPEN {
         return;
     }
@@ -130,7 +129,6 @@ pub fn authenticate_wait_response(
     use crossbeam_channel::TryRecvError::{Disconnected, Empty};
     use std::process::abort;
 
-    // let mut info_label = q_info_label.iter_mut().next().unwrap();
     match r_connection.message_receiver.try_recv() {
         Err(Disconnected) => {
             abort();

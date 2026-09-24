@@ -203,9 +203,9 @@ pub(crate) fn actions(
                             &rapier_bodies.0,
                         ) && player.minerals_cnt >= rules.0.factory_cost;
 
-                        player.minerals_cnt -= rules.0.factory_cost;
-
                         if may_build {
+                            player.minerals_cnt -= rules.0.factory_cost;
+
                             let rigid_body = RigidBodyBuilder::fixed()
                                 .translation(Vec2::new(pos_x, pos_y))
                                 .build();

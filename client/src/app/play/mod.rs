@@ -80,7 +80,6 @@ pub fn handle_camera(
 pub fn show_game(
     mut server_messages: MessageReader<ServerMessage>,
     mut entities: Query<&mut Transform>,
-    // mut info_label: Query<&mut Text, With<InfoLabel>>,
     mut r_entities: ResMut<Entities>,
     r_sprites: Res<GameSprites>,
     mut commands: Commands,

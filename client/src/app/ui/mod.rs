@@ -7,7 +7,7 @@ use bevy::{
     },
     math::Vec3,
     sprite::Sprite,
-    text::{EditableText, EditableTextFilter, TextCursorStyle},
+    text::{EditableText, EditableTextFilter, FontSize, TextCursorStyle, TextFont},
     transform::components::{GlobalTransform, Transform},
     ui::{
         AlignItems, BackgroundColor, BorderColor, BorderRadius, FlexDirection, Interaction,
@@ -19,10 +19,7 @@ use bevy::{
 };
 use bevy_color::{
     Color, LinearRgba,
-    palettes::{
-        css::{DARK_SLATE_GRAY, WHITE},
-        tailwind::SLATE_300,
-    },
+    palettes::css::{DARK_SLATE_GRAY, WHITE},
 };
 use bevy_ecs::{
     children, component::Component, entity::Entity, message::MessageReader, system::Res,
@@ -36,6 +33,22 @@ use bevy_state::state::NextState;
 use std::ops::DerefMut;
 
 use crate::app::{ActionMessage, GameSprites, GameState, InfoMessage, PlayState, PlayerName};
+
+const FONT_SIZE: f32 = 4.;
+const PADDING: f32 = 3.;
+const BORDER_RADIUS: f32 = 8.;
+const BORDER_THICKNESS: f32 = 2.2;
+const BORDER_COLOR: Color = Color::srgb_u8(0x34, 0xc6, 0xeb);
+const NORMAL_BUTTON: Color = Color::srgb(0.15, 0.15, 0.15);
+const HOVERED_BUTTON: Color = Color::srgb(0.25, 0.25, 0.25);
+
+pub fn border_radius() -> BorderRadius {
+    BorderRadius::all(Val::Px(BORDER_RADIUS))
+}
+
+pub fn border_color() -> BorderColor {
+    BorderColor::all(BORDER_COLOR)
+}
 
 #[cfg(not(target_arch = "wasm32"))]
 use crate::app::ProgramOptions;
@@ -64,18 +77,11 @@ pub struct GamePanel;
 #[derive(Component)]
 pub struct ResourcesPanel;
 
-// #[derive(Component)]
-// pub struct UiCameraMarker;
-
 #[derive(Component)]
 pub struct FactoryInPlacement;
 
-const NORMAL_BUTTON: Color = Color::srgb(0.15, 0.15, 0.15);
-const HOVERED_BUTTON: Color = Color::srgb(0.25, 0.25, 0.25);
-
 pub fn setup_ui_camera(mut commands: Commands) {
     commands.spawn((
-        // UiCameraMarker,
         IsDefaultUiCamera,
         Camera2d::default(),
         Transform::from_xyz(0., 0., 0.),
@@ -102,16 +108,11 @@ pub fn handle_placing_factory(
     mut factory_in_placement: Query<(Entity, &mut Transform), With<FactoryInPlacement>>,
     camera: Query<(&Camera, &GlobalTransform), With<Camera2d>>,
     windows: Query<&Window>,
-    // play_state: Res<PlayState>,
     mut next_play_state: ResMut<NextState<PlayState>>,
     mouse_button: Res<ButtonInput<MouseButton>>,
     mut actions: MessageWriter<ActionMessage>,
     mut commands: Commands,
 ) {
-    // if let PlayState::Idle = play_state.deref() {
-    //     return;
-    // }
-
     let (camera, camera_transform) = camera.single().unwrap();
     let maybe_cursor_position = windows.single().unwrap().cursor_position();
     if maybe_cursor_position.is_none() {
@@ -172,37 +173,42 @@ pub fn handle_place_factory_button(
             ));
             play_state.set(PlayState::PlacingFactory);
         }
-        Interaction::Hovered => {
-            // *color = HOVERED_BUTTON.into();
-        }
-        Interaction::None => {
-            // input_focus.clear();
-            // *color = NORMAL_BUTTON.into();
-        }
+        Interaction::Hovered => {}
+        Interaction::None => {}
     }
 }
 
 pub fn setup_resources_panel(mut commands: Commands) {
-    commands.spawn((
-        ResourcesPanel,
-        Visibility::Hidden,
-        BackgroundColor {
-            0: Color::LinearRgba(LinearRgba::rgb(0.1, 0.1, 0.1)),
-        },
-        Node {
-            width: percent(30.),
-            height: percent(20.),
-            padding: percent(2.).all(),
-            margin: percent(2.).all(),
-            left: px(0),
-            top: px(0),
-            position_type: PositionType::Absolute,
-            border: px(2.).all(),
-            border_radius: BorderRadius::all(Val::Percent(10.)),
-            ..default()
-        },
-        children![(Text::new("Minerals   "),), (Text::new("<nb_minerals>"),)],
-    ));
+    commands
+        .spawn((
+            ResourcesPanel,
+            Visibility::Hidden,
+            BackgroundColor {
+                0: Color::LinearRgba(LinearRgba::rgb(0.1, 0.1, 0.1)),
+            },
+            Node {
+                width: percent(30.),
+                height: percent(20.),
+                padding: percent(PADDING).all(),
+                margin: percent(2.).all(),
+                left: px(0),
+                top: px(0),
+                position_type: PositionType::Absolute,
+                border: px(BORDER_THICKNESS).all(),
+                border_radius: border_radius(),
+                ..default()
+            },
+        ))
+        .with_children(|parent| {
+            parent.spawn((
+                Text::new("Minerals:"),
+                TextFont::from_font_size(FontSize::VMin(FONT_SIZE)),
+            ));
+            parent.spawn((
+                Text::new("<nb>"),
+                TextFont::from_font_size(FontSize::VMin(FONT_SIZE)),
+            ));
+        });
 }
 
 pub fn show_resources_panel(mut resources_panel: Query<&mut Visibility, With<ResourcesPanel>>) {
@@ -221,13 +227,13 @@ pub fn setup_game_panel(mut commands: Commands) {
             Node {
                 width: percent(20.),
                 height: percent(60.),
-                padding: percent(2.).all(),
+                padding: percent(PADDING).all(),
                 margin: percent(2.).all(),
                 right: px(0),
                 top: px(0),
                 position_type: PositionType::Absolute,
-                border: px(2.).all(),
-                border_radius: BorderRadius::all(Val::Percent(10.)),
+                border: px(BORDER_THICKNESS).all(),
+                border_radius: border_radius(),
                 ..default()
             },
         ))
@@ -238,14 +244,17 @@ pub fn setup_game_panel(mut commands: Commands) {
                 Node {
                     flex_grow: 1.,
                     height: px(30),
-                    border: UiRect::all(px(2)),
+                    border: UiRect::all(px(BORDER_THICKNESS)),
                     align_items: AlignItems::Center,
                     justify_content: JustifyContent::Center,
-                    border_radius: BorderRadius::all(Val::Percent(10.)),
+                    border_radius: border_radius(),
                     ..default()
                 },
-                BorderColor::all(WHITE),
-                children![(Text::new("Spawn factory"),)],
+                border_color(),
+                children![(
+                    Text::new("Spawn factory"),
+                    TextFont::from_font_size(FontSize::VMin(FONT_SIZE)),
+                )],
             ));
         });
 }
@@ -256,15 +265,9 @@ pub fn show_game_panel(mut game_panel: Query<&mut Visibility, With<GamePanel>>) 
 }
 
 pub fn handle_connect_button(
-    connect_button: Query<
-        // Entity,
-        // &ConnectButton,
-        &Interaction,
-        (With<ConnectButton>, Changed<Interaction>),
-    >,
+    connect_button: Query<&Interaction, (With<ConnectButton>, Changed<Interaction>)>,
     player_name_field: Query<&EditableText, With<PlayerNameField>>,
     mut info_label: MessageWriter<InfoMessage>,
-    // mut input_focus: ResMut<InputFocus>,
     mut player_name: ResMut<PlayerName>,
     mut state: ResMut<NextState<GameState>>,
 ) {
@@ -274,25 +277,15 @@ pub fn handle_connect_button(
     }
     let interaction = maybe_interaction.unwrap();
     let player_name_text = player_name_field.iter().next().unwrap();
-    // for (entity, _, interaction, mut color, _, _) in &mut connect_button {
-    // for interaction in &mut connect_button {
     match *interaction {
         Interaction::Pressed => {
             let player_name_field_string = player_name_text.value().to_string();
             player_name.0 = player_name_field_string;
             info_label.write(InfoMessage("Connecting...".to_string()));
             state.set(GameState::Connect);
-            // input_focus.set(entity, FocusCause::Pressed);
         }
-        Interaction::Hovered => {
-            // *color = HOVERED_BUTTON.into();
-        }
-        Interaction::None => {
-            // input_focus.clear();
-            // *color = NORMAL_BUTTON.into();
-        }
+        _ => {}
     }
-    // }
 }
 
 pub fn handle_buttons(
@@ -300,20 +293,13 @@ pub fn handle_buttons(
 ) {
     for (interaction, mut background_color) in &mut connect_button {
         match *interaction {
-            Interaction::Pressed => {
-                // let player_name_field_string = player_name_text.value().to_string();
-                // player_name.0 = player_name_field_string;
-                // info_label.write(InfoMessage("Connecting...".to_string()));
-                // state.set(State::Connect);
-                // input_focus.set(entity, FocusCause::Pressed);
-            }
             Interaction::Hovered => {
                 *background_color = HOVERED_BUTTON.into();
             }
             Interaction::None => {
-                // input_focus.clear();
                 *background_color = NORMAL_BUTTON.into();
             }
+            _ => {}
         }
     }
 }
@@ -337,7 +323,6 @@ pub fn setup_connect_page(
                 ..default()
             },
             Visibility::Visible,
-            // ConnectPage,
         ))
         .with_children(|parent| {
             parent.spawn((
@@ -348,6 +333,7 @@ pub fn setup_connect_page(
                 },
                 InfoLabel,
                 Text::new(""),
+                TextFont::from_font_size(FontSize::VMin(FONT_SIZE)),
             ));
         });
 
@@ -367,67 +353,70 @@ pub fn setup_connect_page(
             parent
                 .spawn((
                     Node {
-                        padding: UiRect::all(Val::Px(10.)),
-                        row_gap: Val::Px(10.),
+                        padding: UiRect::all(Val::Px(PADDING)),
                         flex_direction: FlexDirection::Column,
-                        border: px(2.).all(),
-                        border_radius: BorderRadius::all(Val::Percent(10.)),
+                        border: px(BORDER_THICKNESS).all(),
+                        border_radius: border_radius(),
                         ..default()
                     },
-                    BorderColor::all(bevy::color::palettes::css::WHITE),
+                    border_color(),
                     TabGroup::new(0),
                 ))
                 .with_children(|parent| {
                     #[cfg(not(target_arch = "wasm32"))]
                     desktop::setup_host_port(parent, program_options);
 
-                    parent
-                        .spawn(Node {
-                            column_gap: Val::Px(10.),
-                            ..default()
-                        })
-                        .with_children(|parent| {
-                            parent.spawn((
-                                Node {
-                                    ..Default::default()
-                                },
-                                Text::new("Player name"),
-                            ));
-                            parent.spawn((
-                                PlayerNameField,
-                                Node {
-                                    width: px(200),
-                                    border: px(2.).all(),
-                                    border_radius: BorderRadius::all(Val::Percent(10.)),
-                                    ..default()
-                                },
-                                player_name_editable_text,
-                                AutoFocus,
-                                TabIndex(2),
-                                TextCursorStyle {
-                                    color: bevy_color::Color::Srgba(WHITE),
-                                    ..Default::default()
-                                },
-                                EditableTextFilter::new(|c| c.is_ascii_alphabetic()),
-                                BackgroundColor(DARK_SLATE_GRAY.into()),
-                                BorderColor::all(SLATE_300),
-                            ));
-                            parent.spawn((
-                                ConnectButton,
-                                Interaction::default(),
-                                TabIndex(3),
-                                Node {
-                                    flex_grow: 1.,
-                                    border: UiRect::all(px(2)),
-                                    align_items: AlignItems::Center,
-                                    justify_content: JustifyContent::Center,
-                                    border_radius: BorderRadius::all(Val::Percent(10.)),
-                                    ..default()
-                                },
-                                BorderColor::all(WHITE),
-                                children![(Text::new("Connect"),)],
-                            ));
-                        });
+                    parent.spawn(Node { ..default() }).with_children(|parent| {
+                        parent.spawn((
+                            Node {
+                                padding: px(PADDING).all(),
+                                align_items: AlignItems::Center,
+                                ..Default::default()
+                            },
+                            Text::new("Player name"),
+                            TextFont::from_font_size(FontSize::VMin(FONT_SIZE)),
+                        ));
+                        parent.spawn((
+                            PlayerNameField,
+                            Node {
+                                padding: px(PADDING).all(),
+                                width: px(200),
+                                border: px(BORDER_THICKNESS).all(),
+                                border_radius: border_radius(),
+                                ..default()
+                            },
+                            player_name_editable_text,
+                            TextFont::from_font_size(FontSize::VMin(FONT_SIZE)),
+                            AutoFocus,
+                            TabIndex(2),
+                            TextCursorStyle {
+                                color: bevy_color::Color::Srgba(WHITE),
+                                ..Default::default()
+                            },
+                            EditableTextFilter::new(|c| c.is_ascii_alphabetic()),
+                            BackgroundColor(DARK_SLATE_GRAY.into()),
+                            border_color(),
+                        ));
+                        parent.spawn((
+                            ConnectButton,
+                            Interaction::default(),
+                            TabIndex(3),
+                            Node {
+                                padding: px(PADDING).all(),
+                                flex_grow: 1.,
+                                border: UiRect::all(px(BORDER_THICKNESS)),
+                                align_items: AlignItems::Center,
+                                justify_content: JustifyContent::Center,
+                                border_radius: border_radius(),
+                                ..default()
+                            },
+                            border_color(),
+                            children![(
+                                Text::new("Connect"),
+                                TextFont::from_font_size(FontSize::VMin(FONT_SIZE)),
+                            )],
+                        ));
+                    });
                 });
         });
 

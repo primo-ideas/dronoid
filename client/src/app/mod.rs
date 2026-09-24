@@ -118,7 +118,6 @@ pub fn run() {
                 }),
             TabNavigationPlugin,
         ))
-        // .add_plugins(AnchorUiPlugin::<ui::UiCameraMarker>::new())
         .insert_resource(ClearColor(Color::srgb(0., 0., 0.)))
         .insert_resource(Entities::default())
         .insert_resource(GameSprites::default())
@@ -137,7 +136,6 @@ pub fn run() {
         .add_message::<InfoMessage>()
         .add_systems(PreStartup, platform::setup_display)
         .add_systems(Startup, setup_sprites)
-        // .add_systems(Startup, setup::game_camera)
         .add_systems(Startup, ui::setup_ui_camera)
         .add_systems(Startup, ui::setup_connect_page)
         .add_systems(Startup, ui::setup_game_panel)
@@ -147,16 +145,13 @@ pub fn run() {
         .add_systems(
             Update,
             ui::handle_place_factory_button
-                // .after(ui::handle_placing_factory)
                 .run_if(in_state(GameState::ShowGame).and_eager(in_state(PlayState::Idle))),
         )
         .add_systems(
             Update,
-            ui::handle_placing_factory
-                // .after(play::handle_camera)
-                .run_if(
-                    in_state(GameState::ShowGame).and_eager(in_state(PlayState::PlacingFactory)),
-                ),
+            ui::handle_placing_factory.run_if(
+                in_state(GameState::ShowGame).and_eager(in_state(PlayState::PlacingFactory)),
+            ),
         )
         .add_systems(
             Update,
