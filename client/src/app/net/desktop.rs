@@ -33,7 +33,7 @@ pub fn connect(
     }
     let addr = format!(
         "{}://{}:{}/{}",
-        protocol, program_options.hostname, program_options.port, program_options.suffix
+        protocol, program_options.hostname, program_options.port, program_options.route
     )
     .to_string();
     info_label.write(InfoMessage(addr.clone()));

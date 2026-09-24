@@ -1,29 +1,6 @@
 use bevy::window::{PrimaryWindow, Window, WindowResolution};
 use bevy_ecs::{query::With, system::Query};
-use clap::Parser;
 use display_info::DisplayInfo;
-use std::str::FromStr;
-
-use crate::app::gen_name;
-
-#[derive(Parser, Debug)]
-struct Args {
-    #[arg(default_value_t = false)]
-    tls: bool,
-    #[arg(default_value_t = String::from_str("").unwrap())]
-    suffix: String,
-}
-
-pub fn init() -> (String, String, u16, bool, String) {
-    dronoid_logger::init();
-    (
-        gen_name(),
-        "127.0.0.1".to_string(),
-        8080,
-        false,
-        String::from_str("dronoid/ws").unwrap(),
-    )
-}
 
 pub fn setup_display(mut window: Query<&mut Window, With<PrimaryWindow>>) {
     let mut current_display_resolution = (1280, 720);

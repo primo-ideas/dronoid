@@ -3,6 +3,7 @@ use bevy::{
     asset::AssetMetaCheck, input_focus::tab_navigation::TabNavigationPlugin, log::LogPlugin,
 };
 use bevy_app::{App, PluginGroup, Update};
+use clap::Parser;
 use rand::random_range;
 use std::collections::HashMap;
 
@@ -40,7 +41,7 @@ pub struct ProgramOptions {
     pub hostname: String,
     pub port: u16,
     pub tls: bool,
-    pub suffix: String,
+    pub route: String,
 }
 
 #[derive(Resource, States, Debug, Clone, PartialEq, Eq, Hash)]
@@ -75,6 +76,24 @@ impl Default for PlayState {
 #[derive(Resource)]
 pub struct PlayerName(pub String);
 
+fn gen_name() -> String {
+    format!("Player{}", random_range(u8::MIN..u8::MAX)).to_string()
+}
+
+#[derive(Parser, Debug)]
+struct Args {
+    #[arg(default_value_t = gen_name(), env = "DRONOID_CLIENT_PLAYER_NAME")]
+    player_name: String,
+    #[arg(default_value_t = "127.0.0.1".to_string(), env = "DRONOID_CLIENT_HOSTNAME")]
+    hostname: String,
+    #[arg(default_value_t = 443, env = "DRONOID_CLIENT_PORT")]
+    port: u16,
+    #[arg(default_value_t = true, env = "DRONOID_CLIENT_TLS")]
+    tls: bool,
+    #[arg(default_value_t = "dronoid/ws".to_string(), env = "DRONOID_CLIENT_ROUTE")]
+    route: String,
+}
+
 pub fn setup_sprites(asset_server: Res<AssetServer>, mut game_sprites: ResMut<GameSprites>) {
     game_sprites.0.insert(
         dronoid_protocol::Kind::Mineral,
@@ -94,12 +113,9 @@ pub fn setup_sprites(asset_server: Res<AssetServer>, mut game_sprites: ResMut<Ga
     );
 }
 
-fn gen_name() -> String {
-    format!("Player{}", random_range(u8::MIN..u8::MAX)).to_string()
-}
-
 pub fn run() {
-    let (player_name, hostname, port, secure, suffix) = platform::init();
+    let args = Args::parse();
+
     App::new()
         .add_plugins((
             DefaultPlugins
@@ -121,13 +137,13 @@ pub fn run() {
         .insert_resource(ClearColor(Color::srgb(0., 0., 0.)))
         .insert_resource(Entities::default())
         .insert_resource(GameSprites::default())
-        .insert_resource(PlayerName(player_name))
+        .insert_resource(PlayerName(args.player_name))
         .insert_resource(SpawnPoint::default())
         .insert_resource(ProgramOptions {
-            suffix: suffix,
-            tls: secure,
-            port: port,
-            hostname,
+            route: args.route,
+            tls: args.tls,
+            port: args.port,
+            hostname: args.hostname,
         })
         .init_state::<GameState>()
         .init_state::<PlayState>()
