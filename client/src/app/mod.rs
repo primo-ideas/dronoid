@@ -82,15 +82,15 @@ fn gen_name() -> String {
 
 #[derive(Parser, Debug)]
 struct Args {
-    #[arg(default_value_t = gen_name(), env = "DRONOID_CLIENT_PLAYER_NAME")]
+    #[arg(long, default_value_t = gen_name(), env = "DRONOID_CLIENT_PLAYER_NAME")]
     player_name: String,
-    #[arg(default_value_t = "127.0.0.1".to_string(), env = "DRONOID_CLIENT_HOSTNAME")]
+    #[arg(long, default_value_t = "127.0.0.1".to_string(), env = "DRONOID_CLIENT_HOSTNAME")]
     hostname: String,
-    #[arg(default_value_t = 443, env = "DRONOID_CLIENT_PORT")]
+    #[arg(long, default_value_t = 443, env = "DRONOID_CLIENT_PORT")]
     port: u16,
-    #[arg(default_value_t = true, env = "DRONOID_CLIENT_TLS")]
+    #[arg(long, default_value_t = true, env = "DRONOID_CLIENT_TLS")]
     tls: bool,
-    #[arg(default_value_t = "dronoid/ws".to_string(), env = "DRONOID_CLIENT_ROUTE")]
+    #[arg(long, default_value_t = "dronoid/ws".to_string(), env = "DRONOID_CLIENT_ROUTE")]
     route: String,
 }
 
