@@ -190,3 +190,10 @@ pub fn send_actions(mut connection: ResMut<Connection>, mut actions: MessageRead
     }
     connection.0.flush().unwrap();
 }
+
+pub fn leave(mut connection: ResMut<Connection>, mut leave_message: MessageReader<ActionMessage>) {
+    if leave_message.read().count() > 0 {
+        let _ = connection.0.close(None);
+        let _ = connection.0.flush();
+    }
+}

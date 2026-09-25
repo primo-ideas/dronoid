@@ -25,6 +25,9 @@ pub struct ServerMessage(pub dronoid_protocol::ServerMessage);
 pub struct ActionMessage(pub dronoid_protocol::Action);
 
 #[derive(Message)]
+pub struct LeaveMessage;
+
+#[derive(Message)]
 pub struct InfoMessage(pub String);
 
 #[derive(Resource, Default)]
@@ -150,6 +153,7 @@ pub fn run() {
         .add_message::<ServerMessage>()
         .add_message::<ActionMessage>()
         .add_message::<InfoMessage>()
+        .add_message::<LeaveMessage>()
         .add_systems(PreStartup, platform::setup_display)
         .add_systems(Startup, setup_sprites)
         .add_systems(Startup, ui::setup::ui_camera)
@@ -188,6 +192,10 @@ pub fn run() {
         )
         .add_systems(
             Update,
+            net::platform::leave.run_if(in_state(GameState::ShowGame)),
+        )
+        .add_systems(
+            Update,
             net::platform::authenticate_send_request.run_if(
                 in_state(GameState::AuthenticateSendRequest)
                     .and_then(resource_exists::<net::platform::Connection>),
@@ -218,6 +226,10 @@ pub fn run() {
         .add_systems(
             Update,
             ui::show_resources_panel.run_if(in_state(GameState::PrepareGame)),
+        )
+        .add_systems(
+            Update,
+            ui::show_leave_game_button.run_if(in_state(GameState::PrepareGame)),
         )
         .add_systems(
             Update,

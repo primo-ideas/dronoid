@@ -3,7 +3,7 @@ use bevy::{
     ui::{BorderColor, BorderRadius, Val, widget::Text},
 };
 use bevy_color::Color;
-use bevy_ecs::{component::Component, message::MessageReader};
+use bevy_ecs::{component::Component, message::MessageReader, system::ParamSet};
 use bevy_ecs::{query::With, system::Query};
 use std::ops::DerefMut;
 
@@ -56,15 +56,17 @@ pub struct ResourcesPanel;
 pub struct FactoryInPlacement;
 
 pub fn show_connect_page(
-    mut connect_page: Query<&mut Visibility, With<ConnectPage>>,
-    mut resources_panel: Query<&mut Visibility, With<ResourcesPanel>>,
-    mut game_panel: Query<&mut Visibility, With<GamePanel>>,
-    mut leave_game_button: Query<&mut Visibility, With<LeaveGameButton>>,
+    mut visibilities: ParamSet<(
+        Query<&mut Visibility, With<ConnectPage>>,
+        Query<&mut Visibility, With<ResourcesPanel>>,
+        Query<&mut Visibility, With<GamePanel>>,
+        Query<&mut Visibility, With<LeaveGameButton>>,
+    )>,
 ) {
-    *connect_page.single_mut().unwrap().deref_mut() = Visibility::Visible;
-    *resources_panel.single_mut().unwrap().deref_mut() = Visibility::Hidden;
-    *game_panel.single_mut().unwrap().deref_mut() = Visibility::Hidden;
-    *leave_game_button.single_mut().unwrap().deref_mut() = Visibility::Hidden;
+    *visibilities.p0().single_mut().unwrap().deref_mut() = Visibility::Visible;
+    *visibilities.p1().single_mut().unwrap().deref_mut() = Visibility::Hidden;
+    *visibilities.p2().single_mut().unwrap().deref_mut() = Visibility::Hidden;
+    *visibilities.p3().single_mut().unwrap().deref_mut() = Visibility::Hidden;
 }
 
 pub fn info_label(
@@ -85,5 +87,10 @@ pub fn show_resources_panel(mut resources_panel: Query<&mut Visibility, With<Res
 
 pub fn show_game_panel(mut game_panel: Query<&mut Visibility, With<GamePanel>>) {
     let mut visibility = game_panel.iter_mut().next().unwrap();
+    *visibility.deref_mut() = Visibility::Visible;
+}
+
+pub fn show_leave_game_button(mut button: Query<&mut Visibility, With<LeaveGameButton>>) {
+    let mut visibility = button.iter_mut().next().unwrap();
     *visibility.deref_mut() = Visibility::Visible;
 }
