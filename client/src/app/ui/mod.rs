@@ -32,6 +32,9 @@ pub fn border_color() -> BorderColor {
 pub struct PlayerNameField;
 
 #[derive(Component)]
+pub struct LeaveGameButton;
+
+#[derive(Component)]
 pub struct ConnectButton;
 
 #[derive(Component)]
@@ -52,9 +55,16 @@ pub struct ResourcesPanel;
 #[derive(Component)]
 pub struct FactoryInPlacement;
 
-pub fn show_connect_page(mut connect_page: Query<&mut Visibility, With<ConnectPage>>) {
-    let mut connect_page_visibility = connect_page.iter_mut().next().unwrap();
-    *connect_page_visibility.deref_mut() = Visibility::Visible;
+pub fn show_connect_page(
+    mut connect_page: Query<&mut Visibility, With<ConnectPage>>,
+    mut resources_panel: Query<&mut Visibility, With<ResourcesPanel>>,
+    mut game_panel: Query<&mut Visibility, With<GamePanel>>,
+    mut leave_game_button: Query<&mut Visibility, With<LeaveGameButton>>,
+) {
+    *connect_page.single_mut().unwrap().deref_mut() = Visibility::Visible;
+    *resources_panel.single_mut().unwrap().deref_mut() = Visibility::Hidden;
+    *game_panel.single_mut().unwrap().deref_mut() = Visibility::Hidden;
+    *leave_game_button.single_mut().unwrap().deref_mut() = Visibility::Hidden;
 }
 
 pub fn info_label(

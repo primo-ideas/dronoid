@@ -156,6 +156,7 @@ pub fn run() {
         .add_systems(Startup, ui::setup::connect_page)
         .add_systems(Startup, ui::setup::game_panel)
         .add_systems(Startup, ui::setup::resources_panel)
+        .add_systems(Startup, ui::setup::leave_game_button)
         .add_systems(Update, ui::info_label)
         .add_systems(Update, ui::handle::buttons)
         .add_systems(
@@ -176,6 +177,10 @@ pub fn run() {
         .add_systems(
             Update,
             ui::handle::connect_button.run_if(in_state(GameState::HandleConnectPage)),
+        )
+        .add_systems(
+            Update,
+            ui::handle::leave_game_button.run_if(in_state(GameState::ShowGame)),
         )
         .add_systems(
             Update,

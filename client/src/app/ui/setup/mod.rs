@@ -25,8 +25,9 @@ use crate::app::ProgramOptions;
 use crate::app::{
     GameState, PlayerName,
     ui::{
-        BORDER_THICKNESS, ConnectButton, ConnectPage, FONT_SIZE, GamePanel, InfoLabel, PADDING,
-        PlaceFactoryButton, PlayerNameField, ResourcesPanel, border_color, border_radius,
+        BORDER_THICKNESS, ConnectButton, ConnectPage, FONT_SIZE, GamePanel, InfoLabel,
+        LeaveGameButton, PADDING, PlaceFactoryButton, PlayerNameField, ResourcesPanel,
+        border_color, border_radius,
     },
 };
 
@@ -72,6 +73,34 @@ pub fn resources_panel(mut commands: Commands) {
                 TextFont::from_font_size(FontSize::VMin(FONT_SIZE)),
             ));
         });
+}
+
+pub fn leave_game_button(mut commands: Commands) {
+    commands.spawn((
+        LeaveGameButton,
+        Visibility::Hidden,
+        BackgroundColor {
+            0: Color::LinearRgba(LinearRgba::rgb(0.1, 0.1, 0.1)),
+        },
+        Node {
+            // width: percent(20.),
+            // height: percent(60.),
+            // padding: percent(PADDING).all(),
+            // margin: percent(2.).all(),
+            left: px(0),
+            bottom: px(0),
+            position_type: PositionType::Absolute,
+            border: px(BORDER_THICKNESS).all(),
+            border_radius: border_radius(),
+            ..default()
+        },
+        Interaction::default(),
+        border_color(),
+        children![(
+            Text::new("Leave"),
+            TextFont::from_font_size(FontSize::VMin(FONT_SIZE)),
+        )],
+    ));
 }
 
 pub fn game_panel(mut commands: Commands) {

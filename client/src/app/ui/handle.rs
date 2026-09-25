@@ -19,8 +19,8 @@ use bevy_state::state::NextState;
 use crate::app::{
     ActionMessage, GameSprites, GameState, InfoMessage, PlayState, PlayerName,
     ui::{
-        ConnectButton, FactoryInPlacement, HOVERED_BUTTON, NORMAL_BUTTON, PlaceFactoryButton,
-        PlayerNameField,
+        ConnectButton, FactoryInPlacement, HOVERED_BUTTON, LeaveGameButton, NORMAL_BUTTON,
+        PlaceFactoryButton, PlayerNameField,
     },
 };
 
@@ -117,6 +117,30 @@ pub fn connect_button(
             player_name.0 = player_name_field_string;
             info_label.write(InfoMessage("Connecting...".to_string()));
             state.set(GameState::Connect);
+        }
+        _ => {}
+    }
+}
+
+pub fn leave_game_button(
+    button: Query<&Interaction, (With<LeaveGameButton>, Changed<Interaction>)>,
+    // player_name_field: Query<&EditableText, With<PlayerNameField>>,
+    // mut info_label: MessageWriter<InfoMessage>,
+    // mut player_name: ResMut<PlayerName>,
+    mut state: ResMut<NextState<GameState>>,
+) {
+    let maybe_interaction = button.iter().next();
+    if maybe_interaction.is_none() {
+        return;
+    }
+    let interaction = maybe_interaction.unwrap();
+    // let player_name_text = player_name_field.iter().next().unwrap();
+    match *interaction {
+        Interaction::Pressed => {
+            // let player_name_field_string = player_name_text.value().to_string();
+            // player_name.0 = player_name_field_string;
+            // info_label.write(InfoMessage("Connecting...".to_string()));
+            state.set(GameState::ShowConnectPage);
         }
         _ => {}
     }
