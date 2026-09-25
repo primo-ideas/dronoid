@@ -8,6 +8,32 @@ use crate::Controls;
 use crate::Error;
 use crate::Rules;
 use crate::player::EnteringPlayer;
+use crate::resource::ControlsR;
+use crate::resource::NewPlayerReceiver;
+use crate::resource::Players;
+use crate::resource::RapierBodies;
+use crate::resource::RapierBroadPhase;
+use crate::resource::RapierCCDSolver;
+use crate::resource::RapierColliders;
+use crate::resource::RapierImpulseJointSet;
+use crate::resource::RapierIntegrationParameters;
+use crate::resource::RapierIslandManager;
+use crate::resource::RapierMultibodyJointSet;
+use crate::resource::RapierNarrowPhase;
+use crate::resource::RapierPipeline;
+use crate::resource::RulesR;
+use crate::resource::TerrainGenerator;
+use crate::resource::Timers;
+use crate::resource::TransportStopper;
+use crate::system::actions;
+use crate::system::cycle;
+use crate::system::factories;
+use crate::system::flush;
+use crate::system::new_players;
+use crate::system::physics;
+use crate::system::startup;
+use crate::system::sync;
+use crate::system::terrain;
 
 pub fn run_game(
     rules: Rules,
@@ -34,12 +60,12 @@ pub fn run_game(
         .insert_resource(RapierPipeline::default())
         .insert_resource(RapierBodies::default())
         .insert_resource(RapierColliders::default())
-        .insert_resource(Controls(controls))
+        .insert_resource(ControlsR(controls))
         .insert_resource(TransportStopper(transport_stopper_tx))
         .insert_resource(NewPlayerReceiver(new_player_rx))
         .insert_resource(Players::default())
         .insert_resource(TerrainGenerator::new(&rules))
-        .insert_resource(Rules(rules))
+        .insert_resource(RulesR(rules))
         .insert_resource(Timers::default())
         .run();
 

@@ -23,7 +23,7 @@ use tungstenite::http::StatusCode;
 use tokio_tungstenite::{WebSocketStream, tungstenite::Message};
 use tracing::{debug, info, trace};
 
-pub async fn run(
+pub async fn run_transport(
     database: Database,
     tcp_listener: TcpListener,
     transport_stopper_rx: Receiver<()>,

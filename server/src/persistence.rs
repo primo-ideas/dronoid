@@ -1,4 +1,4 @@
-use crate::game::helper::gen_id;
+use crate::helper::gen_id;
 
 #[derive(Clone)]
 pub struct PlayerEntry {

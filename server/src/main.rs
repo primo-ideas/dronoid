@@ -4,13 +4,17 @@ use clap::Parser;
 use crossbeam_channel::TryRecvError::Disconnected;
 use crossbeam_channel::{Receiver, Sender};
 use std::io;
+use std::net::SocketAddr;
+use std::str::FromStr;
 use thiserror::Error;
 use tokio::net::TcpListener;
 use tokio::signal;
 use tokio_tungstenite::tungstenite;
 
+use crate::game::run_game;
 use crate::persistence::Database;
 use crate::player::EnteringPlayer;
+use crate::transport::run_transport;
 
 mod component;
 mod game;
@@ -137,14 +141,14 @@ pub async fn run(
 ) -> Result<()> {
     let (player_tx, player_rx) = crossbeam_channel::bounded::<EnteringPlayer>(1000);
     let (transport_stopper_tx, transport_stopper_rx) = crossbeam_channel::bounded::<()>(1);
-    let transport_hdl = tokio::spawn(transport::run(
+    let transport_hdl = tokio::spawn(run_transport(
         database,
         tcp_listener,
         transport_stopper_rx,
         player_tx,
     ));
     let game_hdl = tokio::task::spawn_blocking(move || {
-        game::run(rules, controls, transport_stopper_tx, player_rx)
+        run_game(rules, controls, transport_stopper_tx, player_rx)
     });
     let _ = tokio::join!(transport_hdl, game_hdl);
     Ok(())
@@ -208,7 +212,7 @@ async fn main() -> anyhow::Result<()> {
         let _ = commands.stop();
     });
 
-    dronoid_server::run(rules, database, tcp_listener, controls).await?;
+    run(rules, database, tcp_listener, controls).await?;
 
     anyhow::Ok(())
 }

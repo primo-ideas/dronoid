@@ -1,5 +1,7 @@
-use bevy_ecs::Query;
+use bevy_ecs::system::Query;
 use rapier2d::dynamics::RigidBodySet;
+
+use crate::component::{Id, Kind, Owned, RapierObject, ZoneExtension};
 
 pub(crate) fn count_kind(
     entities: &Vec<&dronoid_protocol::Kind>,

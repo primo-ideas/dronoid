@@ -1,4 +1,4 @@
-use bevy_ecs::Resource;
+use bevy_ecs::resource::Resource;
 use crossbeam_channel::Receiver;
 use crossbeam_channel::Sender;
 use noise::NoiseFn;
@@ -57,10 +57,10 @@ pub(crate) struct NewPlayerReceiver(pub(crate) Receiver<EnteringPlayer>);
 pub(crate) struct Players(pub(crate) HashMap<u32, OnlinePlayer>);
 
 #[derive(Resource)]
-pub(crate) struct Controls(pub(crate) crate::Controls);
+pub(crate) struct ControlsR(pub(crate) crate::Controls);
 
 #[derive(Resource)]
-pub(crate) struct Rules(pub(crate) crate::Rules);
+pub(crate) struct RulesR(pub(crate) crate::Rules);
 
 #[derive(Resource)]
 pub(crate) struct TerrainGenerator {
