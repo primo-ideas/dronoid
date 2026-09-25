@@ -79,9 +79,9 @@ pub struct ResourcesPanelMarker;
 #[derive(Component)]
 pub struct FactoryInPlacementMarker;
 
-fn gen_name() -> String {
-    format!("Player{}", random_range(u8::MIN..u8::MAX)).to_string()
-}
+// fn gen_name() -> String {
+//     format!("Player{}", random_range(u8::MIN..u8::MAX)).to_string()
+// }
 
 pub fn plugin(app: &mut App) {
     app.init_state::<UiState>();

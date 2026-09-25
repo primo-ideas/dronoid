@@ -10,9 +10,13 @@ use tokio_tungstenite::tungstenite;
 use crate::persistence::Database;
 use crate::player::EnteringPlayer;
 
-pub mod game;
+pub mod component;
+pub mod helper;
+pub mod logger;
 pub mod persistence;
 pub mod player;
+pub mod resource;
+pub mod system;
 pub mod transport;
 
 pub type Result<T> = std::result::Result<T, Error>;
@@ -146,4 +150,62 @@ pub async fn run(
 pub fn new_commands() -> (Commands, Controls) {
     let (tx, rx) = crossbeam_channel::bounded(1);
     (Commands { stopper: tx }, Controls { stopper: rx })
+}
+
+#[derive(Parser, Debug)]
+struct Args {
+    #[arg(default_value_t = 8080)]
+    port: u16,
+    #[arg(long, default_value_t = dronoid_protocol::TERRAIN_SCALE)]
+    terrain_scale: f32,
+    #[arg(long, default_value_t = dronoid_protocol::MINERAL_THRESHOLD)]
+    mineral_threshold: f32,
+    #[arg(long, default_value_t = dronoid_protocol::TICK_DURATION)]
+    tick_duration: f32,
+    #[arg(long, default_value_t = dronoid_protocol::STARTING_MINERALS)]
+    starting_minerals: u32,
+    #[arg(long, default_value_t = dronoid_protocol::TERRAIN_SEED)]
+    terrain_seed: u32,
+}
+
+#[tokio::main(flavor = "multi_thread")]
+async fn main() -> anyhow::Result<()> {
+    let args = Args::parse();
+    // dronoid_logger::init();
+    let tcp_listener = TcpListener::bind(SocketAddr::from_str(
+        format!("127.0.0.1:{}", args.port).as_str(),
+    )?)
+    .await?;
+    let rules = Rules {
+        terrain_scale: args.terrain_scale,
+        mineral_threshold: args.mineral_threshold,
+        tick_duration: args.tick_duration,
+        starting_minerals: args.starting_minerals,
+        terrain_seed: args.terrain_seed,
+        ..Default::default()
+    };
+    let database = persistence::Database::default();
+    let (commands, controls) = new_commands();
+    tokio::spawn(async move {
+        #[cfg(target_os = "windows")]
+        let mut ctrl_close = signal::windows::ctrl_close().unwrap();
+        #[cfg(target_os = "windows")]
+        let mut ctrl_logoff = signal::windows::ctrl_logoff().unwrap();
+        #[cfg(target_os = "windows")]
+        let mut ctrl_shutdown = signal::windows::ctrl_shutdown().unwrap();
+        #[cfg(target_os = "windows")]
+        tokio::select! {
+            _ = signal::ctrl_c() => {}
+            _ = ctrl_close.recv() => {}
+            _ = ctrl_logoff.recv() => {}
+            _ = ctrl_shutdown.recv() => {}
+        }
+        #[cfg(target_os = "linux")]
+        let _ = signal::ctrl_c().await;
+        let _ = commands.stop();
+    });
+
+    dronoid_server::run(rules, database, tcp_listener, controls).await?;
+
+    anyhow::Ok(())
 }
