@@ -1,4 +1,4 @@
-use bevy_ecs::{component::Component, system::Commands};
+use bevy_ecs::{Commands, Component};
 use rapier2d::{
     dynamics::{RigidBodyBuilder, RigidBodyHandle, RigidBodySet},
     geometry::{ColliderBuilder, ColliderSet},

@@ -1,4 +1,4 @@
-use bevy_ecs::system::Query;
+use bevy_ecs::Query;
 use rapier2d::dynamics::RigidBodySet;
 
 pub(crate) fn count_kind(
@@ -12,13 +12,9 @@ pub(crate) fn count_kind(
 
 pub(crate) fn get_entities_in_zone(
     player_id: u32,
-    all_entities: Vec<(&component::RapierObject, &component::Kind, &component::Id)>,
+    all_entities: Vec<(&RapierObject, &Kind, &Id)>,
     rigid_body_set: &RigidBodySet,
-    zone_extenders: Query<(
-        &component::ZoneExtension,
-        &component::RapierObject,
-        &component::Owned,
-    )>,
+    zone_extenders: Query<(&ZoneExtension, &RapierObject, &Owned)>,
 ) -> Vec<dronoid_protocol::Entity> {
     let mut entities_in_zone = Vec::new();
     for (rapier_position, kind, id) in all_entities {
@@ -44,11 +40,7 @@ pub(crate) fn is_in_player_zone(
     pos_x: f32,
     pos_y: f32,
     id: &u32,
-    zone_extenders: Vec<(
-        &component::ZoneExtension,
-        &component::RapierObject,
-        &component::Owned,
-    )>,
+    zone_extenders: Vec<(&ZoneExtension, &RapierObject, &Owned)>,
     rigid_body_set: &RigidBodySet,
 ) -> bool {
     for (zone_extension, rapier_position, owner_id) in zone_extenders {

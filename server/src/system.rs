@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 use bevy_app::AppExit;
-use bevy_ecs::system::{Commands, Query, ResMut};
+use bevy_ecs::{Commands, Query, ResMut};
 use crossbeam_channel::TryRecvError;
 use rapier2d::{
     dynamics::RigidBodyBuilder,
@@ -15,17 +15,17 @@ use tracing::{info, warn};
 
 use crate::game::component;
 use crate::game::resource;
-use crate::game::{component::HasExtended, helper};
+use crate::game::{HasExtended, helper};
 use crate::player::OnlinePlayer;
 
-pub(crate) fn startup(rules: Res<resource::Rules>) {
+pub(crate) fn startup(rules: Res<Rules>) {
     let rules_str = format!("{:#?}", rules.0);
     debug!(sender = "Game", "{rules_str}");
     info!(sender = "Game", "Waiting for players");
 }
 
 #[allow(unused)]
-pub(crate) fn debug(entities: Query<&component::Kind>, mut timers: ResMut<resource::Timers>) {
+pub(crate) fn debug(entities: Query<&Kind>, mut timers: ResMut<Timers>) {
     let now = Instant::now();
     let kinds = entities.iter().map(|x| &x.0).collect();
     if now - timers.last_info > Duration::from_secs_f32(10.) {
@@ -42,10 +42,10 @@ pub(crate) fn debug(entities: Query<&component::Kind>, mut timers: ResMut<resour
 }
 
 pub(crate) fn cycle(
-    controls: ResMut<resource::Controls>,
-    transport_stopper: Res<resource::TransportStopper>,
-    rules: Res<resource::Rules>,
-    mut timers: ResMut<resource::Timers>,
+    controls: ResMut<Controls>,
+    transport_stopper: Res<TransportStopper>,
+    rules: Res<Rules>,
+    mut timers: ResMut<Timers>,
     mut exit: MessageWriter<AppExit>,
 ) {
     let now = Instant::now();
@@ -70,11 +70,11 @@ pub(crate) fn cycle(
 }
 
 pub(crate) fn new_players(
-    new_player_rx: ResMut<resource::NewPlayerReceiver>,
-    mut players: ResMut<resource::Players>,
-    mut rapier_bodies: ResMut<resource::RapierBodies>,
-    mut rapier_colliders: ResMut<resource::RapierColliders>,
-    rules: Res<resource::Rules>,
+    new_player_rx: ResMut<NewPlayerReceiver>,
+    mut players: ResMut<Players>,
+    mut rapier_bodies: ResMut<RapierBodies>,
+    mut rapier_colliders: ResMut<RapierColliders>,
+    rules: Res<Rules>,
     mut commands: Commands,
 ) {
     while let Ok(new_player) = new_player_rx.0.try_recv() {
@@ -101,26 +101,23 @@ pub(crate) fn new_players(
             .0
             .insert_with_parent(collider, rapier_hdl, &mut rapier_bodies.0);
         commands.spawn((
-            component::Beacon,
-            component::Kind(dronoid_protocol::Kind::Spawn),
-            component::Owned(new_player.id),
-            component::ZoneExtension { radius: 100. },
-            component::RapierObject { rapier_hdl },
-            component::Id(helper::gen_id()),
+            Beacon,
+            Kind(dronoid_protocol::Kind::Spawn),
+            Owned(new_player.id),
+            ZoneExtension { radius: 100. },
+            RapierObject { rapier_hdl },
+            Id(helper::gen_id()),
         ));
     }
 }
 
 pub(crate) fn terrain(
-    zone_extenders: Query<
-        (Entity, &component::ZoneExtension, &component::RapierObject),
-        Without<HasExtended>,
-    >,
-    spawns: Query<&component::RapierObject, With<component::Beacon>>,
-    mut terrain_generator: ResMut<resource::TerrainGenerator>,
-    rules: Res<resource::Rules>,
-    mut rapier_bodies: ResMut<resource::RapierBodies>,
-    mut rapier_colliders: ResMut<resource::RapierColliders>,
+    zone_extenders: Query<(Entity, &ZoneExtension, &RapierObject), Without<HasExtended>>,
+    spawns: Query<&RapierObject, With<Beacon>>,
+    mut terrain_generator: ResMut<TerrainGenerator>,
+    rules: Res<Rules>,
+    mut rapier_bodies: ResMut<RapierBodies>,
+    mut rapier_colliders: ResMut<RapierColliders>,
     mut commands: Commands,
 ) {
     for (entity, zone_extender, rapier_object) in zone_extenders.iter() {
@@ -156,10 +153,10 @@ pub(crate) fn terrain(
                         &mut rapier_bodies.0,
                     );
                     commands.spawn((
-                        component::Resource,
-                        component::RapierObject { rapier_hdl },
-                        component::Kind(dronoid_protocol::Kind::Mineral),
-                        component::Id(helper::gen_id()),
+                        Resource,
+                        RapierObject { rapier_hdl },
+                        Kind(dronoid_protocol::Kind::Mineral),
+                        Id(helper::gen_id()),
                     ));
                 }
             }
@@ -169,16 +166,12 @@ pub(crate) fn terrain(
 }
 
 pub(crate) fn actions(
-    zone_extenders: Query<(
-        &component::ZoneExtension,
-        &component::RapierObject,
-        &component::Owned,
-    )>,
-    mut factories: Query<&mut component::Factory>,
-    mut rapier_bodies: ResMut<resource::RapierBodies>,
-    mut rapier_colliders: ResMut<resource::RapierColliders>,
-    mut players: ResMut<resource::Players>,
-    rules: Res<resource::Rules>,
+    zone_extenders: Query<(&ZoneExtension, &RapierObject, &Owned)>,
+    mut factories: Query<&mut Factory>,
+    mut rapier_bodies: ResMut<RapierBodies>,
+    mut rapier_colliders: ResMut<RapierColliders>,
+    mut players: ResMut<Players>,
+    rules: Res<Rules>,
     mut commands: Commands,
 ) {
     let mut ids_to_remove = Vec::<u32>::new();
@@ -221,13 +214,13 @@ pub(crate) fn actions(
                                 id,
                                 commands
                                     .spawn((
-                                        component::ZoneExtension {
+                                        ZoneExtension {
                                             radius: rules.0.factory_extension,
                                         },
-                                        component::RapierObject { rapier_hdl },
-                                        component::Factory::default(),
-                                        component::Kind(dronoid_protocol::Kind::Factory),
-                                        component::Id(id),
+                                        RapierObject { rapier_hdl },
+                                        Factory::default(),
+                                        Kind(dronoid_protocol::Kind::Factory),
+                                        Id(id),
                                     ))
                                     .id(),
                             );
@@ -263,10 +256,10 @@ pub(crate) fn actions(
 }
 
 pub(crate) fn factories(
-    mut query: Query<&mut component::Factory>,
-    mut rapier_bodies: ResMut<resource::RapierBodies>,
-    mut rapier_colliders: ResMut<resource::RapierColliders>,
-    rules: Res<resource::Rules>,
+    mut query: Query<&mut Factory>,
+    mut rapier_bodies: ResMut<RapierBodies>,
+    mut rapier_colliders: ResMut<RapierColliders>,
+    rules: Res<Rules>,
     mut commands: Commands,
 ) {
     for mut factory in &mut query {
@@ -285,16 +278,16 @@ pub(crate) fn factories(
 }
 
 pub(crate) fn physics(
-    rapier_integration_parameters: Res<resource::RapierIntegrationParameters>,
-    mut rapier_island_manager: ResMut<resource::RapierIslandManager>,
-    mut rapier_broad_phase: ResMut<resource::RapierBroadPhase>,
-    mut rapier_narrow_phase: ResMut<resource::RapierNarrowPhase>,
-    mut rapier_impulse_joint_set: ResMut<resource::RapierImpulseJointSet>,
-    mut rapier_multibody_joint_set: ResMut<resource::RapierMultibodyJointSet>,
-    mut rapier_ccd_solver: ResMut<resource::RapierCCDSolver>,
-    mut rapier_pipeline: ResMut<resource::RapierPipeline>,
-    mut rapier_bodies: ResMut<resource::RapierBodies>,
-    mut rapier_colliders: ResMut<resource::RapierColliders>,
+    rapier_integration_parameters: Res<RapierIntegrationParameters>,
+    mut rapier_island_manager: ResMut<RapierIslandManager>,
+    mut rapier_broad_phase: ResMut<RapierBroadPhase>,
+    mut rapier_narrow_phase: ResMut<RapierNarrowPhase>,
+    mut rapier_impulse_joint_set: ResMut<RapierImpulseJointSet>,
+    mut rapier_multibody_joint_set: ResMut<RapierMultibodyJointSet>,
+    mut rapier_ccd_solver: ResMut<RapierCCDSolver>,
+    mut rapier_pipeline: ResMut<RapierPipeline>,
+    mut rapier_bodies: ResMut<RapierBodies>,
+    mut rapier_colliders: ResMut<RapierColliders>,
 ) {
     rapier_pipeline.0.step(
         Vector::new(0., 0.),
@@ -313,14 +306,10 @@ pub(crate) fn physics(
 }
 
 pub(crate) fn sync(
-    entities: Query<(&component::RapierObject, &component::Kind, &component::Id)>,
-    zone_extenders: Query<(
-        &component::ZoneExtension,
-        &component::RapierObject,
-        &component::Owned,
-    )>,
-    rapier_bodies: Res<resource::RapierBodies>,
-    mut players: ResMut<resource::Players>,
+    entities: Query<(&RapierObject, &Kind, &Id)>,
+    zone_extenders: Query<(&ZoneExtension, &RapierObject, &Owned)>,
+    rapier_bodies: Res<RapierBodies>,
+    mut players: ResMut<Players>,
 ) {
     for (id, player) in &mut players.0 {
         let mut state = dronoid_protocol::State::default();
@@ -337,7 +326,7 @@ pub(crate) fn sync(
     }
 }
 
-pub(crate) fn flush(mut players: ResMut<resource::Players>) {
+pub(crate) fn flush(mut players: ResMut<Players>) {
     let mut ids_to_remove = Vec::<u32>::new();
     for (id, player) in &mut players.0 {
         if player.to_kick || player.flush_messages().is_err() {

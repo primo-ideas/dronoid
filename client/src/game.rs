@@ -29,9 +29,9 @@ pub struct GameSprites(pub HashMap<dronoid_protocol::Kind, (f32, Handle<Image>)>
 
 pub fn plugin(app: &mut App) {
     app.init_state::<GameState>();
-    app.init_resource::<SpawnPoint>();
-    app.init_resource::<Entities>();
-    app.init_resource::<GameSprites>();
+    app.init_<SpawnPoint>();
+    app.init_<Entities>();
+    app.init_<GameSprites>();
     app.add_systems(Update, prepare.run_if(in_state(GameState::PrepareGame)));
     app.add_systems(Update, handle_camera.run_if(in_state(GameState::ShowGame)));
     app.add_systems(Update, show_game.run_if(in_state(GameState::ShowGame)));

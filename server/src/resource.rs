@@ -1,4 +1,4 @@
-use bevy_ecs::resource::Resource;
+use bevy_ecs::Resource;
 use crossbeam_channel::Receiver;
 use crossbeam_channel::Sender;
 use noise::NoiseFn;
