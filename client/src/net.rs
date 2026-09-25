@@ -1,7 +1,12 @@
-use std::net::TcpStream;
-
 use bevy::prelude::*;
-use tungstenite::stream::MaybeTlsStream;
+use dronoid_protocol::{AuthenticationRequest, ClientMessage, ServerMessage};
+use std::{net::TcpStream, str::FromStr};
+use tungstenite::{Bytes, stream::MaybeTlsStream};
+
+use crate::{
+    game::{GameState, ProgramOptions, SpawnPoint},
+    ui::{InfoMessage, PlayerName},
+};
 
 #[derive(Message)]
 pub struct StateMessage(pub dronoid_protocol::State);
@@ -165,15 +170,17 @@ pub fn authenticate_wait_response(
 
 pub fn read_server_messages(
     mut connection: ResMut<Connection>,
-    mut server_messages: MessageWriter<ServerMessage>,
+    mut server_messages: MessageWriter<StateMessage>,
 ) {
-    while let Ok(Message::Binary(message)) = connection.0.read() {
+    while let Ok(tungstenite::Message::Binary(message)) = connection.0.read() {
         let server_message = bson::deserialize_from_slice::<dronoid_protocol::ServerMessage>(
             &message.iter().as_slice(),
         )
         .unwrap();
 
-        server_messages.write(ServerMessage(server_message));
+        if let ServerMessage::State(state) = server_message {
+            server_messages.write(StateMessage(state));
+        }
     }
 }
 
@@ -182,7 +189,7 @@ pub fn send_actions(mut connection: ResMut<Connection>, mut actions: MessageRead
         let binary_to_send = bson::serialize_to_vec(&action.0).unwrap();
         connection
             .0
-            .write(Message::Binary(Bytes::from(binary_to_send)))
+            .write(tungstenite::Message::Binary(Bytes::from(binary_to_send)))
             .unwrap();
     }
     connection.0.flush().unwrap();

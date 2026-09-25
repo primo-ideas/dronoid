@@ -9,14 +9,18 @@ use bevy::{
 };
 use bevy_color::palettes::css::{DARK_SLATE_GRAY, WHITE};
 use rand::random_range;
+use std::ops::DerefMut;
 
-use crate::game::{GameSprites, GameState, ProgramOptions};
+use crate::{
+    game::{GameSprites, GameState, ProgramOptions},
+    net::ActionMessage,
+};
 
 #[derive(Component)]
-pub struct HostField;
+pub struct HostFieldMarker;
 
 #[derive(Component)]
-pub struct PortField;
+pub struct PortFieldMarker;
 
 #[derive(Message)]
 pub struct InfoMessage(pub String);
@@ -123,7 +127,7 @@ pub fn setup_host_port(
                 TextFont::from_font_size(FontSize::VMin(FONT_SIZE)),
             ));
             parent.spawn((
-                HostField,
+                HostFieldMarker,
                 Node {
                     padding: px(PADDING).all(),
                     width: px(200),
@@ -141,7 +145,7 @@ pub fn setup_host_port(
                 EditableTextFilter::new(|c| c.is_ascii() && c.is_ascii_graphic()),
                 BackgroundColor(DARK_SLATE_GRAY.into()),
                 border_color(),
-                AutoFocus,
+                // AutoFocus,
             ));
             parent.spawn((
                 Node {
@@ -152,7 +156,7 @@ pub fn setup_host_port(
                 TextFont::from_font_size(FontSize::VMin(FONT_SIZE)),
             ));
             parent.spawn((
-                PortField,
+                PortFieldMarker,
                 Node {
                     padding: px(PADDING).all(),
                     width: px(80),

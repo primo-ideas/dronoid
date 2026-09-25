@@ -1,9 +1,8 @@
-use std::{collections::HashMap, ops::DerefMut};
-
 use bevy::{
     input::mouse::{AccumulatedMouseMotion, AccumulatedMouseScroll},
     prelude::*,
 };
+use std::{collections::HashMap, ops::DerefMut};
 
 use crate::{net::StateMessage, ui::ConnectPageMarker};
 
