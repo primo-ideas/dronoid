@@ -4,15 +4,24 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-dronoid-logger.workspace = true
 dronoid-protocol.workspace = true
 
 anyhow.workspace = true
-bevy = { workspace = true, features = ["std", "multi_threaded", "dynamic_linking"] }
+bevy = { workspace = true, features = [
+    "std",
+    "multi_threaded",
+    "dynamic_linking",
+] }
 bevy_app.workspace = true
 bevy_ecs.workspace = true
 bson = { workspace = true, features = ["serde"] }
-clap = { workspace = true, features = ["derive", "std", "help", "usage", "env"] }
+clap = { workspace = true, features = [
+    "derive",
+    "std",
+    "help",
+    "usage",
+    "env",
+] }
 crossbeam-channel = { workspace = true, features = ["std"] }
 futures.workspace = true
 noise.workspace = true

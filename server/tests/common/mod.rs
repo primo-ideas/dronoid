@@ -26,7 +26,6 @@ pub struct TestContext {
 
 impl TestContext {
     pub async fn setup(rules: Rules) -> anyhow::Result<Self> {
-        // init_logger();
         let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await?;
         let server_addr = listener.local_addr()?;
         let (commands, controls) = new_commands();

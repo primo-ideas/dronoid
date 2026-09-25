@@ -1,23 +1,4 @@
-use bevy::{
-    camera::{Camera2d, Projection, visibility::Visibility},
-    input::{
-        ButtonInput,
-        keyboard::KeyCode,
-        mouse::{AccumulatedMouseMotion, AccumulatedMouseScroll, MouseButton},
-    },
-    sprite::Sprite,
-    transform::components::Transform,
-};
-use bevy_ecs::{
-    message::MessageReader,
-    query::With,
-    system::{Commands, Query, Res, ResMut},
-};
-use bevy_state::state::NextState;
-use std::ops::DerefMut;
-
-use crate::app::ui::ConnectPage;
-use crate::app::{Entities, GameSprites, GameState, ServerMessage, SpawnPoint};
+use bevy::prelude::*;
 
 pub fn prepare(
     mut camera: Query<(&mut Projection, &mut Transform), With<Camera2d>>,
