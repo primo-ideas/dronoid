@@ -1,8 +1,6 @@
 use bevy_ecs::system::Query;
 use rapier2d::dynamics::RigidBodySet;
 
-use crate::game::component;
-
 pub(crate) fn count_kind(
     entities: &Vec<&dronoid_protocol::Kind>,
     kind: &dronoid_protocol::Kind,

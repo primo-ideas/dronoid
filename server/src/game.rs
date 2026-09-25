@@ -1,8 +1,3 @@
-pub mod component;
-pub mod helper;
-pub mod resource;
-pub mod system;
-
 use bevy::prelude::*;
 use bevy_app::{App, AppExit, Startup};
 use crossbeam_channel::Receiver;
@@ -14,7 +9,7 @@ use crate::Error;
 use crate::Rules;
 use crate::player::EnteringPlayer;
 
-pub fn run(
+pub fn run_game(
     rules: Rules,
     controls: Controls,
     transport_stopper_tx: Sender<()>,

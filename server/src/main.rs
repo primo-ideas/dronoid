@@ -1,23 +1,26 @@
 #![forbid(unsafe_code)]
 
+use clap::Parser;
 use crossbeam_channel::TryRecvError::Disconnected;
 use crossbeam_channel::{Receiver, Sender};
 use std::io;
 use thiserror::Error;
 use tokio::net::TcpListener;
+use tokio::signal;
 use tokio_tungstenite::tungstenite;
 
 use crate::persistence::Database;
 use crate::player::EnteringPlayer;
 
-pub mod component;
-pub mod helper;
-pub mod logger;
-pub mod persistence;
-pub mod player;
-pub mod resource;
-pub mod system;
-pub mod transport;
+mod component;
+mod game;
+mod helper;
+mod logger;
+mod persistence;
+mod player;
+mod resource;
+mod system;
+mod transport;
 
 pub type Result<T> = std::result::Result<T, Error>;
 

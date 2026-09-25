@@ -1,3 +1,16 @@
+use colored::Color;
+use colored::Colorize;
+use std::time::Instant;
+use tracing::{
+    Event, Level,
+    field::{Field, Visit},
+};
+use tracing_subscriber::EnvFilter;
+use tracing_subscriber::Registry;
+use tracing_subscriber::layer::SubscriberExt;
+use tracing_subscriber::util::SubscriberInitExt;
+use tracing_subscriber::{Layer, layer::Context};
+
 #[derive(Default)]
 struct MessageVisitor {
     message: String,
