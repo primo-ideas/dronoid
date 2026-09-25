@@ -8,7 +8,6 @@ use bevy::{
     text::{EditableText, EditableTextFilter, TextCursorStyle},
 };
 use bevy_color::palettes::css::{DARK_SLATE_GRAY, WHITE};
-use rand::random_range;
 use std::ops::DerefMut;
 
 use crate::{
