@@ -1,4 +1,14 @@
+use std::net::TcpStream;
+
 use bevy::prelude::*;
+use tungstenite::stream::MaybeTlsStream;
+
+#[derive(Message)]
+pub struct StateMessage(pub dronoid_protocol::State);
+
+#[derive(Message)]
+pub struct ActionMessage(pub dronoid_protocol::Action);
+
 #[derive(Resource)]
 pub struct Connection(pub tungstenite::WebSocket<MaybeTlsStream<TcpStream>>);
 

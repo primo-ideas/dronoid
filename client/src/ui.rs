@@ -1,68 +1,78 @@
-use bevy::prelude::*;
-
+use bevy::{
+    ecs::relationship::RelatedSpawnerCommands,
+    input_focus::{
+        AutoFocus,
+        tab_navigation::{TabGroup, TabIndex},
+    },
+    prelude::*,
+    text::{EditableText, EditableTextFilter, TextCursorStyle},
+};
+use bevy_color::palettes::css::{DARK_SLATE_GRAY, WHITE};
 use rand::random_range;
-use std::collections::HashMap;
 
-#[derive(Message)]
-pub struct ServerMessage(pub dronoid_protocol::ServerMessage);
+use crate::game::{GameSprites, GameState, ProgramOptions};
 
-#[derive(Message)]
-pub struct ActionMessage(pub dronoid_protocol::Action);
+#[derive(Component)]
+pub struct HostField;
 
-#[derive(Message)]
-pub struct LeaveMessage;
+#[derive(Component)]
+pub struct PortField;
 
 #[derive(Message)]
 pub struct InfoMessage(pub String);
 
-#[derive(Resource, Default)]
-pub struct SpawnPoint(pub (f32, f32));
-
-#[derive(Resource, Default)]
-pub struct Entities(pub HashMap<u32, Entity>);
-
-#[derive(Resource, Default)]
-pub struct GameSprites(pub HashMap<dronoid_protocol::Kind, (f32, Handle<Image>)>);
-
-#[derive(Resource)]
-pub struct ProgramOptions {
-    pub hostname: String,
-    pub port: u16,
-    pub tls: bool,
-    pub route: String,
-}
-
-#[derive(Resource, States, Debug, Clone, PartialEq, Eq, Hash)]
-pub enum GameState {
-    ShowConnectPage,
-    HandleConnectPage,
-    Connect,
-    AuthenticateSendRequest,
-    AuthenticateWaitResponse,
-    PrepareGame,
-    ShowGame,
-}
-
-impl Default for GameState {
-    fn default() -> Self {
-        Self::ShowConnectPage
-    }
-}
-
-#[derive(Resource, States, Debug, Clone, PartialEq, Eq, Hash)]
-pub enum PlayState {
+#[derive(Resource, States, Debug, Clone, PartialEq, Eq, Hash, Default)]
+pub enum UiState {
+    #[default]
     Idle,
     PlacingFactory,
 }
 
-impl Default for PlayState {
-    fn default() -> Self {
-        Self::Idle
-    }
-}
-
 #[derive(Resource)]
 pub struct PlayerName(pub String);
+
+const FONT_SIZE: f32 = 4.;
+const PADDING: f32 = 3.;
+const BORDER_RADIUS: f32 = 8.;
+const BORDER_THICKNESS: f32 = 2.2;
+const BORDER_COLOR: Color = Color::srgb_u8(0x34, 0xc6, 0xeb);
+const NORMAL_BUTTON: Color = Color::srgb(0.15, 0.15, 0.15);
+const HOVERED_BUTTON: Color = Color::srgb(0.25, 0.25, 0.25);
+
+pub fn border_radius() -> BorderRadius {
+    BorderRadius::all(Val::Px(BORDER_RADIUS))
+}
+
+pub fn border_color() -> BorderColor {
+    BorderColor::all(BORDER_COLOR)
+}
+
+#[derive(Component)]
+pub struct PlayerNameFieldMarker;
+
+#[derive(Component)]
+pub struct LeaveGameButtonMarker;
+
+#[derive(Component)]
+pub struct ConnectButtonMarker;
+
+#[derive(Component)]
+pub struct PlaceFactoryButtonMarker;
+
+#[derive(Component)]
+pub struct InfoLabelMarker;
+
+#[derive(Component)]
+pub struct ConnectPageMarker;
+
+#[derive(Component)]
+pub struct GamePanelMarker;
+
+#[derive(Component)]
+pub struct ResourcesPanelMarker;
+
+#[derive(Component)]
+pub struct FactoryInPlacementMarker;
 
 fn gen_name() -> String {
     format!("Player{}", random_range(u8::MIN..u8::MAX)).to_string()
@@ -87,16 +97,7 @@ pub fn setup_sprites(asset_server: Res<AssetServer>, mut game_sprites: ResMut<Ga
     );
 }
 
-
-
-
-#[derive(Component)]
-pub struct HostField;
-
-#[derive(Component)]
-pub struct PortField;
-
-pub fn host_port(
+pub fn setup_host_port(
     parent: &mut RelatedSpawnerCommands<'_, ChildOf>,
     program_options: Res<ProgramOptions>,
 ) {
@@ -184,7 +185,7 @@ pub fn ui_camera(mut commands: Commands) {
 pub fn resources_panel(mut commands: Commands) {
     commands
         .spawn((
-            ResourcesPanel,
+            ResourcesPanelMarker,
             Visibility::Hidden,
             BackgroundColor {
                 0: Color::LinearRgba(LinearRgba::rgb(0.1, 0.1, 0.1)),
@@ -214,9 +215,9 @@ pub fn resources_panel(mut commands: Commands) {
         });
 }
 
-pub fn leave_game_button(mut commands: Commands) {
+pub fn setup_leave_game_button(mut commands: Commands) {
     commands.spawn((
-        LeaveGameButton,
+        LeaveGameButtonMarker,
         Visibility::Hidden,
         BackgroundColor {
             0: Color::LinearRgba(LinearRgba::rgb(0.1, 0.1, 0.1)),
@@ -245,7 +246,7 @@ pub fn leave_game_button(mut commands: Commands) {
 pub fn game_panel(mut commands: Commands) {
     commands
         .spawn((
-            GamePanel,
+            GamePanelMarker,
             Visibility::Hidden,
             BackgroundColor {
                 0: Color::LinearRgba(LinearRgba::rgb(0.1, 0.1, 0.1)),
@@ -265,7 +266,7 @@ pub fn game_panel(mut commands: Commands) {
         ))
         .with_children(|parent| {
             parent.spawn((
-                PlaceFactoryButton,
+                PlaceFactoryButtonMarker,
                 Interaction::default(),
                 Node {
                     flex_grow: 1.,
@@ -286,7 +287,7 @@ pub fn game_panel(mut commands: Commands) {
 }
 
 pub fn connect_page(
-    #[cfg(not(target_arch = "wasm32"))] program_options: Res<ProgramOptions>,
+    program_options: Res<ProgramOptions>,
     player_name: Res<PlayerName>,
     mut state: ResMut<NextState<GameState>>,
     mut commands: Commands,
@@ -312,7 +313,7 @@ pub fn connect_page(
                     bottom: px(20.),
                     ..default()
                 },
-                InfoLabel,
+                InfoLabelMarker,
                 Text::new(""),
                 TextFont::from_font_size(FontSize::VMin(FONT_SIZE)),
             ));
@@ -328,7 +329,7 @@ pub fn connect_page(
                 ..default()
             },
             Visibility::Visible,
-            ConnectPage,
+            ConnectPageMarker,
         ))
         .with_children(|parent| {
             parent
@@ -344,8 +345,7 @@ pub fn connect_page(
                     TabGroup::new(0),
                 ))
                 .with_children(|parent| {
-                    #[cfg(not(target_arch = "wasm32"))]
-                    desktop::host_port(parent, program_options);
+                    setup_host_port(parent, program_options);
 
                     parent.spawn(Node { ..default() }).with_children(|parent| {
                         parent.spawn((
@@ -358,7 +358,7 @@ pub fn connect_page(
                             TextFont::from_font_size(FontSize::VMin(FONT_SIZE)),
                         ));
                         parent.spawn((
-                            PlayerNameField,
+                            PlayerNameFieldMarker,
                             Node {
                                 padding: px(PADDING).all(),
                                 width: px(200),
@@ -379,7 +379,7 @@ pub fn connect_page(
                             border_color(),
                         ));
                         parent.spawn((
-                            ConnectButton,
+                            ConnectButtonMarker,
                             Interaction::default(),
                             TabIndex(3),
                             Node {
@@ -404,12 +404,11 @@ pub fn connect_page(
     state.set(GameState::HandleConnectPage);
 }
 
-
 pub fn placing_factory(
-    mut factory_in_placement: Query<(Entity, &mut Transform), With<FactoryInPlacement>>,
+    mut factory_in_placement: Query<(Entity, &mut Transform), With<FactoryInPlacementMarker>>,
     camera: Query<(&Camera, &GlobalTransform), With<Camera2d>>,
     windows: Query<&Window>,
-    mut next_play_state: ResMut<NextState<PlayState>>,
+    mut next_play_state: ResMut<NextState<UiState>>,
     mouse_button: Res<ButtonInput<MouseButton>>,
     mut actions: MessageWriter<ActionMessage>,
     mut commands: Commands,
@@ -429,7 +428,7 @@ pub fn placing_factory(
             position.x, position.y,
         ))));
         commands.entity(factory_entity).despawn();
-        next_play_state.set(PlayState::Idle);
+        next_play_state.set(UiState::Idle);
         return;
     }
     factory_sprite_transform.translation = Vec3::new(
@@ -440,8 +439,8 @@ pub fn placing_factory(
 }
 
 pub fn place_factory_button(
-    button: Query<&Interaction, (With<PlaceFactoryButton>, Changed<Interaction>)>,
-    mut play_state: ResMut<NextState<PlayState>>,
+    button: Query<&Interaction, (With<PlaceFactoryButtonMarker>, Changed<Interaction>)>,
+    mut play_state: ResMut<NextState<UiState>>,
     sprites: Res<GameSprites>,
     windows: Query<&Window>,
     camera: Query<(&Camera, &GlobalTransform), With<Camera2d>>,
@@ -468,11 +467,11 @@ pub fn place_factory_button(
             transform.scale.x = *size;
             transform.scale.y = *size;
             commands.spawn((
-                FactoryInPlacement,
+                FactoryInPlacementMarker,
                 transform,
                 Sprite::from_image(image_hdl.clone()),
             ));
-            play_state.set(PlayState::PlacingFactory);
+            play_state.set(UiState::PlacingFactory);
         }
         Interaction::Hovered => {}
         Interaction::None => {}
@@ -480,8 +479,8 @@ pub fn place_factory_button(
 }
 
 pub fn connect_button(
-    connect_button: Query<&Interaction, (With<ConnectButton>, Changed<Interaction>)>,
-    player_name_field: Query<&EditableText, With<PlayerNameField>>,
+    connect_button: Query<&Interaction, (With<ConnectButtonMarker>, Changed<Interaction>)>,
+    player_name_field: Query<&EditableText, With<PlayerNameFieldMarker>>,
     mut info_label: MessageWriter<InfoMessage>,
     mut player_name: ResMut<PlayerName>,
     mut state: ResMut<NextState<GameState>>,
@@ -504,7 +503,7 @@ pub fn connect_button(
 }
 
 pub fn leave_game_button(
-    button: Query<&Interaction, (With<LeaveGameButton>, Changed<Interaction>)>,
+    button: Query<&Interaction, (With<LeaveGameButtonMarker>, Changed<Interaction>)>,
     // player_name_field: Query<&EditableText, With<PlayerNameField>>,
     // mut info_label: MessageWriter<InfoMessage>,
     // mut player_name: ResMut<PlayerName>,
@@ -543,56 +542,12 @@ pub fn buttons(
     }
 }
 
-
-const FONT_SIZE: f32 = 4.;
-const PADDING: f32 = 3.;
-const BORDER_RADIUS: f32 = 8.;
-const BORDER_THICKNESS: f32 = 2.2;
-const BORDER_COLOR: Color = Color::srgb_u8(0x34, 0xc6, 0xeb);
-const NORMAL_BUTTON: Color = Color::srgb(0.15, 0.15, 0.15);
-const HOVERED_BUTTON: Color = Color::srgb(0.25, 0.25, 0.25);
-
-pub fn border_radius() -> BorderRadius {
-    BorderRadius::all(Val::Px(BORDER_RADIUS))
-}
-
-pub fn border_color() -> BorderColor {
-    BorderColor::all(BORDER_COLOR)
-}
-
-#[derive(Component)]
-pub struct PlayerNameField;
-
-#[derive(Component)]
-pub struct LeaveGameButton;
-
-#[derive(Component)]
-pub struct ConnectButton;
-
-#[derive(Component)]
-pub struct PlaceFactoryButton;
-
-#[derive(Component)]
-pub struct InfoLabel;
-
-#[derive(Component)]
-pub struct ConnectPage;
-
-#[derive(Component)]
-pub struct GamePanel;
-
-#[derive(Component)]
-pub struct ResourcesPanel;
-
-#[derive(Component)]
-pub struct FactoryInPlacement;
-
 pub fn show_connect_page(
     mut visibilities: ParamSet<(
-        Query<&mut Visibility, With<ConnectPage>>,
-        Query<&mut Visibility, With<ResourcesPanel>>,
-        Query<&mut Visibility, With<GamePanel>>,
-        Query<&mut Visibility, With<LeaveGameButton>>,
+        Query<&mut Visibility, With<ConnectPageMarker>>,
+        Query<&mut Visibility, With<ResourcesPanelMarker>>,
+        Query<&mut Visibility, With<GamePanelMarker>>,
+        Query<&mut Visibility, With<LeaveGameButtonMarker>>,
     )>,
 ) {
     *visibilities.p0().single_mut().unwrap().deref_mut() = Visibility::Visible;
@@ -603,7 +558,7 @@ pub fn show_connect_page(
 
 pub fn info_label(
     mut info_events: MessageReader<InfoMessage>,
-    mut info_label: Query<&mut Text, With<InfoLabel>>,
+    mut info_label: Query<&mut Text, With<InfoLabelMarker>>,
 ) {
     let mut info_label = info_label.iter_mut().next().unwrap();
 
@@ -612,17 +567,19 @@ pub fn info_label(
     }
 }
 
-pub fn show_resources_panel(mut resources_panel: Query<&mut Visibility, With<ResourcesPanel>>) {
+pub fn show_resources_panel(
+    mut resources_panel: Query<&mut Visibility, With<ResourcesPanelMarker>>,
+) {
     let mut visibility = resources_panel.iter_mut().next().unwrap();
     *visibility.deref_mut() = Visibility::Visible;
 }
 
-pub fn show_game_panel(mut game_panel: Query<&mut Visibility, With<GamePanel>>) {
+pub fn show_game_panel(mut game_panel: Query<&mut Visibility, With<GamePanelMarker>>) {
     let mut visibility = game_panel.iter_mut().next().unwrap();
     *visibility.deref_mut() = Visibility::Visible;
 }
 
-pub fn show_leave_game_button(mut button: Query<&mut Visibility, With<LeaveGameButton>>) {
+pub fn show_leave_game_button(mut button: Query<&mut Visibility, With<LeaveGameButtonMarker>>) {
     let mut visibility = button.iter_mut().next().unwrap();
     *visibility.deref_mut() = Visibility::Visible;
 }
