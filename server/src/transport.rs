@@ -17,11 +17,10 @@ use tokio::sync::Mutex;
 use tokio::time;
 use tokio_tungstenite::MaybeTlsStream;
 use tokio_tungstenite::tungstenite::Bytes;
-use tungstenite::handshake::server::{ErrorResponse, Request};
-use tungstenite::http::StatusCode;
-// use tokio_tungstenite::tungstenite::protocol::WebSocketConfig;
 use tokio_tungstenite::{WebSocketStream, tungstenite::Message};
 use tracing::{debug, info, trace};
+use tungstenite::handshake::server::{ErrorResponse, Request};
+use tungstenite::http::StatusCode;
 
 pub async fn run_transport(
     database: Database,

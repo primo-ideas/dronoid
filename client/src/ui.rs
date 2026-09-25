@@ -78,10 +78,6 @@ pub struct ResourcesPanelMarker;
 #[derive(Component)]
 pub struct FactoryInPlacementMarker;
 
-// fn gen_name() -> String {
-//     format!("Player{}", random_range(u8::MIN..u8::MAX)).to_string()
-// }
-
 pub fn plugin(app: &mut App) {
     app.init_state::<UiState>();
     app.add_message::<InfoMessage>();
@@ -166,7 +162,6 @@ fn setup_host_port(
                 EditableTextFilter::new(|c| c.is_ascii() && c.is_ascii_graphic()),
                 BackgroundColor(DARK_SLATE_GRAY.into()),
                 border_color(),
-                // AutoFocus,
             ));
             parent.spawn((
                 Node {
@@ -248,10 +243,6 @@ fn setup_leave_game_button(mut commands: Commands) {
             0: Color::LinearRgba(LinearRgba::rgb(0.1, 0.1, 0.1)),
         },
         Node {
-            // width: percent(20.),
-            // height: percent(60.),
-            // padding: percent(PADDING).all(),
-            // margin: percent(2.).all(),
             left: px(0),
             bottom: px(0),
             position_type: PositionType::Absolute,
@@ -529,9 +520,6 @@ fn handle_connect_button(
 
 fn handle_leave_game_button(
     button: Query<&Interaction, (With<LeaveGameButtonMarker>, Changed<Interaction>)>,
-    // player_name_field: Query<&EditableText, With<PlayerNameField>>,
-    // mut info_label: MessageWriter<InfoMessage>,
-    // mut player_name: ResMut<PlayerName>,
     mut state: ResMut<NextState<GameState>>,
 ) {
     let maybe_interaction = button.iter().next();
@@ -539,12 +527,8 @@ fn handle_leave_game_button(
         return;
     }
     let interaction = maybe_interaction.unwrap();
-    // let player_name_text = player_name_field.iter().next().unwrap();
     match *interaction {
         Interaction::Pressed => {
-            // let player_name_field_string = player_name_text.value().to_string();
-            // player_name.0 = player_name_field_string;
-            // info_label.write(InfoMessage("Connecting...".to_string()));
             state.set(GameState::ShowConnectPage);
         }
         _ => {}
