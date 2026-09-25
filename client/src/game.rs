@@ -27,15 +27,17 @@ pub struct Entities(pub HashMap<u32, Entity>);
 #[derive(Resource, Default)]
 pub struct GameSprites(pub HashMap<dronoid_protocol::Kind, (f32, Handle<Image>)>);
 
-#[derive(Resource)]
-pub struct ProgramOptions {
-    pub hostname: String,
-    pub port: u16,
-    pub tls: bool,
-    pub route: String,
+pub fn plugin(app: &mut App) {
+    app.init_state::<GameState>();
+    app.init_resource::<SpawnPoint>();
+    app.init_resource::<Entities>();
+    app.init_resource::<GameSprites>();
+    app.add_systems(Update, prepare.run_if(in_state(GameState::PrepareGame)));
+    app.add_systems(Update, handle_camera.run_if(in_state(GameState::ShowGame)));
+    app.add_systems(Update, show_game.run_if(in_state(GameState::ShowGame)));
 }
 
-pub fn prepare(
+fn prepare(
     mut camera: Query<(&mut Projection, &mut Transform), With<Camera2d>>,
     mut connect_page: Query<&mut Visibility, With<ConnectPageMarker>>,
     mut state: ResMut<NextState<GameState>>,
@@ -53,7 +55,7 @@ pub fn prepare(
     state.set(GameState::ShowGame);
 }
 
-pub fn handle_camera(
+fn handle_camera(
     mut camera: Query<(&mut Projection, &mut Transform), With<Camera2d>>,
     mouse_motion: Res<AccumulatedMouseMotion>,
     mouse_scroll: Res<AccumulatedMouseScroll>,
@@ -90,7 +92,7 @@ pub fn handle_camera(
     }
 }
 
-pub fn show_game(
+fn show_game(
     mut state_messages: MessageReader<StateMessage>,
     mut entities: Query<&mut Transform>,
     mut r_entities: ResMut<Entities>,

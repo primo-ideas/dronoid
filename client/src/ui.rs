@@ -12,15 +12,10 @@ use rand::random_range;
 use std::ops::DerefMut;
 
 use crate::{
-    game::{GameSprites, GameState, ProgramOptions},
+    ProgramArgs,
+    game::{GameSprites, GameState},
     net::ActionMessage,
 };
-
-#[derive(Component)]
-pub struct HostFieldMarker;
-
-#[derive(Component)]
-pub struct PortFieldMarker;
 
 #[derive(Message)]
 pub struct InfoMessage(pub String);
@@ -43,13 +38,19 @@ const BORDER_COLOR: Color = Color::srgb_u8(0x34, 0xc6, 0xeb);
 const NORMAL_BUTTON: Color = Color::srgb(0.15, 0.15, 0.15);
 const HOVERED_BUTTON: Color = Color::srgb(0.25, 0.25, 0.25);
 
-pub fn border_radius() -> BorderRadius {
+fn border_radius() -> BorderRadius {
     BorderRadius::all(Val::Px(BORDER_RADIUS))
 }
 
-pub fn border_color() -> BorderColor {
+fn border_color() -> BorderColor {
     BorderColor::all(BORDER_COLOR)
 }
+
+#[derive(Component)]
+pub struct HostFieldMarker;
+
+#[derive(Component)]
+pub struct PortFieldMarker;
 
 #[derive(Component)]
 pub struct PlayerNameFieldMarker;
@@ -82,7 +83,28 @@ fn gen_name() -> String {
     format!("Player{}", random_range(u8::MIN..u8::MAX)).to_string()
 }
 
-pub fn setup_sprites(asset_server: Res<AssetServer>, mut game_sprites: ResMut<GameSprites>) {
+pub fn plugin(app: &mut App) {
+    app.init_state::<UiState>();
+    app.add_message::<InfoMessage>();
+    app.add_systems(Startup, setup_sprites);
+    app.add_systems(Startup, setup_ui_camera);
+    app.add_systems(Startup, setup_leave_game_button);
+    app.add_systems(Startup, setup_connect_page);
+    app.add_systems(Startup, setup_game_panel);
+    app.add_systems(Startup, setup_resources_panel);
+    app.add_systems(Update, handle_all_buttons);
+    app.add_systems(Update, handle_info_label);
+    app.add_systems(Update, handle_placing_factory);
+    app.add_systems(Update, handle_place_factory_button);
+    app.add_systems(Update, handle_connect_button);
+    app.add_systems(Update, handle_leave_game_button);
+    app.add_systems(Update, show_connect_page);
+    app.add_systems(Update, show_game_panel);
+    app.add_systems(Update, show_leave_game_button);
+    app.add_systems(Update, show_resources_panel);
+}
+
+fn setup_sprites(asset_server: Res<AssetServer>, mut game_sprites: ResMut<GameSprites>) {
     game_sprites.0.insert(
         dronoid_protocol::Kind::Mineral,
         (1. / 128., asset_server.load("textures/mineral.png")),
@@ -101,9 +123,9 @@ pub fn setup_sprites(asset_server: Res<AssetServer>, mut game_sprites: ResMut<Ga
     );
 }
 
-pub fn setup_host_port(
+fn setup_host_port(
     parent: &mut RelatedSpawnerCommands<'_, ChildOf>,
-    program_options: Res<ProgramOptions>,
+    program_options: Res<ProgramArgs>,
 ) {
     let mut host_editable_text = EditableText::new(program_options.hostname.to_string().as_str());
     host_editable_text.cursor_width = 0.4;
@@ -178,7 +200,7 @@ pub fn setup_host_port(
         });
 }
 
-pub fn ui_camera(mut commands: Commands) {
+fn setup_ui_camera(mut commands: Commands) {
     commands.spawn((
         IsDefaultUiCamera,
         Camera2d::default(),
@@ -186,7 +208,7 @@ pub fn ui_camera(mut commands: Commands) {
     ));
 }
 
-pub fn resources_panel(mut commands: Commands) {
+fn setup_resources_panel(mut commands: Commands) {
     commands
         .spawn((
             ResourcesPanelMarker,
@@ -219,7 +241,7 @@ pub fn resources_panel(mut commands: Commands) {
         });
 }
 
-pub fn setup_leave_game_button(mut commands: Commands) {
+fn setup_leave_game_button(mut commands: Commands) {
     commands.spawn((
         LeaveGameButtonMarker,
         Visibility::Hidden,
@@ -247,7 +269,7 @@ pub fn setup_leave_game_button(mut commands: Commands) {
     ));
 }
 
-pub fn game_panel(mut commands: Commands) {
+fn setup_game_panel(mut commands: Commands) {
     commands
         .spawn((
             GamePanelMarker,
@@ -290,8 +312,8 @@ pub fn game_panel(mut commands: Commands) {
         });
 }
 
-pub fn connect_page(
-    program_options: Res<ProgramOptions>,
+fn setup_connect_page(
+    program_options: Res<ProgramArgs>,
     player_name: Res<PlayerName>,
     mut state: ResMut<NextState<GameState>>,
     mut commands: Commands,
@@ -408,7 +430,7 @@ pub fn connect_page(
     state.set(GameState::HandleConnectPage);
 }
 
-pub fn placing_factory(
+fn handle_placing_factory(
     mut factory_in_placement: Query<(Entity, &mut Transform), With<FactoryInPlacementMarker>>,
     camera: Query<(&Camera, &GlobalTransform), With<Camera2d>>,
     windows: Query<&Window>,
@@ -442,7 +464,7 @@ pub fn placing_factory(
     );
 }
 
-pub fn place_factory_button(
+fn handle_place_factory_button(
     button: Query<&Interaction, (With<PlaceFactoryButtonMarker>, Changed<Interaction>)>,
     mut play_state: ResMut<NextState<UiState>>,
     sprites: Res<GameSprites>,
@@ -482,7 +504,7 @@ pub fn place_factory_button(
     }
 }
 
-pub fn connect_button(
+fn handle_connect_button(
     connect_button: Query<&Interaction, (With<ConnectButtonMarker>, Changed<Interaction>)>,
     player_name_field: Query<&EditableText, With<PlayerNameFieldMarker>>,
     mut info_label: MessageWriter<InfoMessage>,
@@ -506,7 +528,7 @@ pub fn connect_button(
     }
 }
 
-pub fn leave_game_button(
+fn handle_leave_game_button(
     button: Query<&Interaction, (With<LeaveGameButtonMarker>, Changed<Interaction>)>,
     // player_name_field: Query<&EditableText, With<PlayerNameField>>,
     // mut info_label: MessageWriter<InfoMessage>,
@@ -530,7 +552,7 @@ pub fn leave_game_button(
     }
 }
 
-pub fn buttons(
+fn handle_all_buttons(
     mut connect_button: Query<(&Interaction, &mut BackgroundColor), Changed<Interaction>>,
 ) {
     for (interaction, mut background_color) in &mut connect_button {
@@ -546,7 +568,18 @@ pub fn buttons(
     }
 }
 
-pub fn show_connect_page(
+fn handle_info_label(
+    mut info_events: MessageReader<InfoMessage>,
+    mut info_label: Query<&mut Text, With<InfoLabelMarker>>,
+) {
+    let mut info_label = info_label.iter_mut().next().unwrap();
+
+    for info_event in info_events.read() {
+        info_label.0 = info_event.0.clone();
+    }
+}
+
+fn show_connect_page(
     mut visibilities: ParamSet<(
         Query<&mut Visibility, With<ConnectPageMarker>>,
         Query<&mut Visibility, With<ResourcesPanelMarker>>,
@@ -560,30 +593,17 @@ pub fn show_connect_page(
     *visibilities.p3().single_mut().unwrap().deref_mut() = Visibility::Hidden;
 }
 
-pub fn info_label(
-    mut info_events: MessageReader<InfoMessage>,
-    mut info_label: Query<&mut Text, With<InfoLabelMarker>>,
-) {
-    let mut info_label = info_label.iter_mut().next().unwrap();
-
-    for info_event in info_events.read() {
-        info_label.0 = info_event.0.clone();
-    }
-}
-
-pub fn show_resources_panel(
-    mut resources_panel: Query<&mut Visibility, With<ResourcesPanelMarker>>,
-) {
+fn show_resources_panel(mut resources_panel: Query<&mut Visibility, With<ResourcesPanelMarker>>) {
     let mut visibility = resources_panel.iter_mut().next().unwrap();
     *visibility.deref_mut() = Visibility::Visible;
 }
 
-pub fn show_game_panel(mut game_panel: Query<&mut Visibility, With<GamePanelMarker>>) {
+fn show_game_panel(mut game_panel: Query<&mut Visibility, With<GamePanelMarker>>) {
     let mut visibility = game_panel.iter_mut().next().unwrap();
     *visibility.deref_mut() = Visibility::Visible;
 }
 
-pub fn show_leave_game_button(mut button: Query<&mut Visibility, With<LeaveGameButtonMarker>>) {
+fn show_leave_game_button(mut button: Query<&mut Visibility, With<LeaveGameButtonMarker>>) {
     let mut visibility = button.iter_mut().next().unwrap();
     *visibility.deref_mut() = Visibility::Visible;
 }

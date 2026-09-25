@@ -4,7 +4,8 @@ use std::{net::TcpStream, str::FromStr};
 use tungstenite::{Bytes, stream::MaybeTlsStream};
 
 use crate::{
-    game::{GameState, ProgramOptions, SpawnPoint},
+    ProgramArgs,
+    game::{GameState, SpawnPoint},
     ui::{InfoMessage, PlayerName},
 };
 
@@ -23,15 +24,41 @@ impl Connection {
     }
 }
 
+pub fn plugin(app: &mut App) {
+    app.add_message::<StateMessage>();
+    app.add_message::<ActionMessage>();
+    app.add_systems(Update, connect.run_if(in_state(GameState::Connect)));
+    app.add_systems(
+        Update,
+        authenticate_send_request.run_if(in_state(GameState::AuthenticateSendRequest)),
+    );
+    app.add_systems(
+        Update,
+        authenticate_wait_response.run_if(in_state(GameState::AuthenticateWaitResponse)),
+    );
+    app.add_systems(
+        Update,
+        read_server_messages.run_if(in_state(GameState::AuthenticateWaitResponse)),
+    );
+    app.add_systems(
+        Update,
+        send_actions.run_if(in_state(GameState::AuthenticateWaitResponse)),
+    );
+    app.add_systems(
+        Update,
+        leave.run_if(in_state(GameState::AuthenticateWaitResponse)),
+    );
+}
+
 pub fn connect(
     mut info_label: MessageWriter<InfoMessage>,
     mut next_state: ResMut<NextState<GameState>>,
-    program_options: Res<ProgramOptions>,
+    program_options: Res<ProgramArgs>,
     mut commands: Commands,
 ) {
-    let mut protocol = "ws";
-    if let true = program_options.tls {
-        protocol = "wss";
+    let mut protocol = "wss";
+    if let true = program_options.no_tls {
+        protocol = "ws";
     }
     let addr = format!(
         "{}://{}:{}/{}",
