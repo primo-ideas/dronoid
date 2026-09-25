@@ -153,7 +153,7 @@ pub async fn serve_client(
                     id: player_entry.id,
                     name: player_entry.name,
                     spawn_point: player_entry.spawn_point,
-                    addr,
+                    _addr: addr,
                 })
                 .is_err()
             {

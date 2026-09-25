@@ -178,7 +178,7 @@ struct Args {
 #[tokio::main(flavor = "multi_thread")]
 async fn main() -> anyhow::Result<()> {
     let args = Args::parse();
-    // dronoid_logger::init();
+    logger::init();
     let tcp_listener = TcpListener::bind(SocketAddr::from_str(
         format!("127.0.0.1:{}", args.port).as_str(),
     )?)

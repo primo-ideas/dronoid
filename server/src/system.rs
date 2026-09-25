@@ -1,6 +1,5 @@
 use bevy::prelude::*;
 use bevy_app::AppExit;
-use bevy_ecs::{Commands, Query, ResMut};
 use crossbeam_channel::TryRecvError;
 use rapier2d::{
     dynamics::RigidBodyBuilder,
@@ -13,12 +12,21 @@ use tokio::time::Instant;
 use tracing::debug;
 use tracing::{info, warn};
 
-use crate::game::component;
-use crate::game::resource;
-use crate::game::{HasExtended, helper};
-use crate::player::OnlinePlayer;
+use crate::{
+    component::{
+        Beacon, Factory, HasExtended, Id, Kind, Owned, PlayerResources, RapierObject, ZoneExtension,
+    },
+    helper,
+    player::OnlinePlayer,
+    resource::{
+        ControlsR, NewPlayerReceiver, Players, RapierBodies, RapierBroadPhase, RapierCCDSolver,
+        RapierColliders, RapierImpulseJointSet, RapierIntegrationParameters, RapierIslandManager,
+        RapierMultibodyJointSet, RapierNarrowPhase, RapierPipeline, RulesR, TerrainGenerator,
+        Timers, TransportStopper,
+    },
+};
 
-pub(crate) fn startup(rules: Res<Rules>) {
+pub(crate) fn startup(rules: Res<RulesR>) {
     let rules_str = format!("{:#?}", rules.0);
     debug!(sender = "Game", "{rules_str}");
     info!(sender = "Game", "Waiting for players");
@@ -42,9 +50,9 @@ pub(crate) fn debug(entities: Query<&Kind>, mut timers: ResMut<Timers>) {
 }
 
 pub(crate) fn cycle(
-    controls: ResMut<Controls>,
+    controls: ResMut<ControlsR>,
     transport_stopper: Res<TransportStopper>,
-    rules: Res<Rules>,
+    rules: Res<RulesR>,
     mut timers: ResMut<Timers>,
     mut exit: MessageWriter<AppExit>,
 ) {
@@ -74,7 +82,7 @@ pub(crate) fn new_players(
     mut players: ResMut<Players>,
     mut rapier_bodies: ResMut<RapierBodies>,
     mut rapier_colliders: ResMut<RapierColliders>,
-    rules: Res<Rules>,
+    rules: Res<RulesR>,
     mut commands: Commands,
 ) {
     while let Ok(new_player) = new_player_rx.0.try_recv() {
@@ -115,7 +123,7 @@ pub(crate) fn terrain(
     zone_extenders: Query<(Entity, &ZoneExtension, &RapierObject), Without<HasExtended>>,
     spawns: Query<&RapierObject, With<Beacon>>,
     mut terrain_generator: ResMut<TerrainGenerator>,
-    rules: Res<Rules>,
+    rules: Res<RulesR>,
     mut rapier_bodies: ResMut<RapierBodies>,
     mut rapier_colliders: ResMut<RapierColliders>,
     mut commands: Commands,
@@ -153,7 +161,7 @@ pub(crate) fn terrain(
                         &mut rapier_bodies.0,
                     );
                     commands.spawn((
-                        Resource,
+                        PlayerResources,
                         RapierObject { rapier_hdl },
                         Kind(dronoid_protocol::Kind::Mineral),
                         Id(helper::gen_id()),
@@ -171,7 +179,7 @@ pub(crate) fn actions(
     mut rapier_bodies: ResMut<RapierBodies>,
     mut rapier_colliders: ResMut<RapierColliders>,
     mut players: ResMut<Players>,
-    rules: Res<Rules>,
+    rules: Res<RulesR>,
     mut commands: Commands,
 ) {
     let mut ids_to_remove = Vec::<u32>::new();
@@ -259,7 +267,7 @@ pub(crate) fn factories(
     mut query: Query<&mut Factory>,
     mut rapier_bodies: ResMut<RapierBodies>,
     mut rapier_colliders: ResMut<RapierColliders>,
-    rules: Res<Rules>,
+    rules: Res<RulesR>,
     mut commands: Commands,
 ) {
     for mut factory in &mut query {
