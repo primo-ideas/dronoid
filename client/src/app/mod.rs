@@ -88,8 +88,8 @@ struct Args {
     hostname: String,
     #[arg(long, default_value_t = 443, env = "DRONOID_CLIENT_PORT")]
     port: u16,
-    #[arg(long, default_value_t = true, env = "DRONOID_CLIENT_TLS")]
-    tls: bool,
+    #[arg(long, default_value_t = false, env = "DRONOID_CLIENT_TLS")]
+    no_tls: bool,
     #[arg(long, default_value_t = "dronoid/ws".to_string(), env = "DRONOID_CLIENT_ROUTE")]
     route: String,
 }
@@ -141,7 +141,7 @@ pub fn run() {
         .insert_resource(SpawnPoint::default())
         .insert_resource(ProgramOptions {
             route: args.route,
-            tls: args.tls,
+            tls: !args.no_tls,
             port: args.port,
             hostname: args.hostname,
         })

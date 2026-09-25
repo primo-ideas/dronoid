@@ -20,7 +20,7 @@ pub struct HostField;
 #[derive(Component)]
 pub struct PortField;
 
-pub fn setup_host_port(
+pub fn host_port(
     parent: &mut RelatedSpawnerCommands<'_, ChildOf>,
     program_options: Res<ProgramOptions>,
 ) {
