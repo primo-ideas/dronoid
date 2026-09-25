@@ -24,6 +24,7 @@ mod persistence;
 mod player;
 mod resource;
 mod system;
+mod tests;
 mod transport;
 
 pub type Result<T> = std::result::Result<T, Error>;

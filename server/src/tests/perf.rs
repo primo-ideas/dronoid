@@ -1,8 +1,6 @@
 use tokio::time::Instant;
 
-use crate::common::{Client, TestContext, default_rules};
-
-mod common;
+use crate::tests::common::{Client, TestContext, default_rules};
 
 #[tokio::test(flavor = "multi_thread")]
 async fn ping_01_twenty_messages() -> anyhow::Result<()> {

@@ -4,9 +4,10 @@ use dronoid_protocol::{Action, Kind, Response};
 use std::time::Duration;
 use tokio::io::AsyncWriteExt;
 
-use crate::common::{Client, TestContext, default_rules};
-
-mod common;
+use crate::{
+    Rules,
+    tests::common::{Client, TestContext, default_rules},
+};
 
 #[tokio::test(flavor = "multi_thread")]
 async fn network_01_tcp_connect() -> anyhow::Result<()> {
@@ -241,7 +242,7 @@ async fn gameplay_13_two_players_receive_first_state() -> anyhow::Result<()> {
 
 #[tokio::test(flavor = "multi_thread")]
 async fn gameplay_14_place_factory_circle() -> anyhow::Result<()> {
-    let rules = dronoid_server::Rules {
+    let rules = Rules {
         starting_minerals: 10000,
         ..Default::default()
     };

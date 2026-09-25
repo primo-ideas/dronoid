@@ -6,15 +6,19 @@ use dronoid_protocol::Response;
 use dronoid_protocol::ServerMessage;
 use dronoid_protocol::State;
 use dronoid_protocol::{Action, AuthenticationRequest, AuthenticationResponse};
-use dronoid_server::new_commands;
-use dronoid_server::persistence;
-use dronoid_server::{Commands, Error, Rules};
 use futures::SinkExt;
 use futures::StreamExt;
 use std::net::SocketAddr;
 use tokio::{net::TcpStream, task::JoinHandle};
 use tokio_tungstenite::{MaybeTlsStream, WebSocketStream, tungstenite::Message};
 use tracing::info;
+
+use crate::Commands;
+use crate::Error;
+use crate::Rules;
+use crate::new_commands;
+use crate::persistence;
+use crate::run;
 
 pub struct TestContext {
     pub commands: Commands,
@@ -31,7 +35,7 @@ impl TestContext {
         let (commands, controls) = new_commands();
         let rules_cln = rules.clone();
         let hdl = tokio::spawn(async move {
-            dronoid_server::run(
+            run(
                 rules_cln,
                 persistence::Database::default(),
                 listener,
