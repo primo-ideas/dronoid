@@ -2,39 +2,3 @@
 name = "dronoid-client"
 version = "0.1.0"
 edition = "2024"
-
-[dependencies]
-dronoid-protocol.workspace = true
-
-addr.workspace = true
-anyhow.workspace = true
-bevy_app.workspace = true
-bevy_color.workspace = true
-bevy_ecs = { workspace = true, features = ["debug"] }
-bevy_state.workspace = true
-bson.workspace = true
-clap = { workspace = true, features = ["derive", "env"] }
-crossbeam-channel.workspace = true
-validator.workspace = true
-# web-sys = { workspace = true, features = ["Window", "Location", "BinaryType"] }
-
-[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-bevy = { workspace = true, default-features = true, features = [
-    "2d",
-    "bevy_ui_widgets",
-    "bevy_color",
-    "dynamic_linking",
-] }
-display-info.workspace = true
-rand.workspace = true
-rustls = { workspace = true, features = ["std", "tls12", "ring"] }
-tungstenite = { workspace = true, features = ["rustls-tls-webpki-roots"] }
-
-getrandom = { workspace = true, features = [] }
-# rand = { workspace = true, features = ["thread_rng"] }
-# web-sys = { workspace = true, features = [
-#     "WebSocket",
-#     "MessageEvent",
-#     "ErrorEvent",
-#     "CloseEvent",
-# ] }

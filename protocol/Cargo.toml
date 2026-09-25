@@ -2,7 +2,3 @@
 name = "dronoid-protocol"
 version = "0.1.0"
 edition = "2024"
-
-[dependencies]
-bson = { workspace = true, features = ["serde", "compat-3-0-0"] }
-serde.workspace = true
