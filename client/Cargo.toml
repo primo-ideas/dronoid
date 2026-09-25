@@ -16,8 +16,7 @@ bson.workspace = true
 clap = { workspace = true, features = ["derive", "env"] }
 crossbeam-channel.workspace = true
 validator.workspace = true
-wasm-bindgen.workspace = true
-web-sys = { workspace = true, features = ["Window", "Location", "BinaryType"] }
+# web-sys = { workspace = true, features = ["Window", "Location", "BinaryType"] }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 bevy = { workspace = true, default-features = true, features = [
@@ -31,17 +30,11 @@ rand.workspace = true
 rustls = { workspace = true, features = ["std", "tls12", "ring"] }
 tungstenite = { workspace = true, features = ["rustls-tls-webpki-roots"] }
 
-[target.'cfg(target_arch = "wasm32")'.dependencies]
-bevy = { workspace = true, default-features = true, features = [
-    "2d",
-    "bevy_ui_widgets",
-    "bevy_color",
-] }
-getrandom = { workspace = true, features = ["wasm_js"] }
-rand = { workspace = true, features = ["thread_rng"] }
-web-sys = { workspace = true, features = [
-    "WebSocket",
-    "MessageEvent",
-    "ErrorEvent",
-    "CloseEvent",
-] }
+getrandom = { workspace = true, features = [] }
+# rand = { workspace = true, features = ["thread_rng"] }
+# web-sys = { workspace = true, features = [
+#     "WebSocket",
+#     "MessageEvent",
+#     "ErrorEvent",
+#     "CloseEvent",
+# ] }
