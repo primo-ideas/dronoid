@@ -1,41 +1,16 @@
 use bevy::{
-    camera::{Camera, Camera2d, visibility::Visibility},
-    input::{ButtonInput, mouse::MouseButton},
-    input_focus::{
-        AutoFocus,
-        tab_navigation::{TabGroup, TabIndex},
-    },
-    math::Vec3,
-    sprite::Sprite,
-    text::{EditableText, EditableTextFilter, FontSize, TextCursorStyle, TextFont},
-    transform::components::{GlobalTransform, Transform},
-    ui::{
-        AlignItems, BackgroundColor, BorderColor, BorderRadius, FlexDirection, Interaction,
-        IsDefaultUiCamera, JustifyContent, Node, PositionType, UiRect, Val, percent, px,
-        widget::Text,
-    },
-    utils::default,
-    window::Window,
+    camera::visibility::Visibility,
+    ui::{BorderColor, BorderRadius, Val, widget::Text},
 };
-use bevy_color::{
-    Color, LinearRgba,
-    palettes::css::{DARK_SLATE_GRAY, WHITE},
-};
-use bevy_ecs::{
-    children, component::Component, entity::Entity, message::MessageReader, system::Res,
-};
-use bevy_ecs::{
-    message::MessageWriter,
-    query::{Changed, With},
-    system::{Commands, Query, ResMut},
-};
-use bevy_state::state::NextState;
+use bevy_color::Color;
+use bevy_ecs::{component::Component, message::MessageReader};
+use bevy_ecs::{query::With, system::Query};
 use std::ops::DerefMut;
 
 pub mod handle;
 pub mod setup;
 
-use crate::app::{ActionMessage, GameSprites, GameState, InfoMessage, PlayState, PlayerName};
+use crate::app::InfoMessage;
 
 const FONT_SIZE: f32 = 4.;
 const PADDING: f32 = 3.;

@@ -152,20 +152,20 @@ pub fn run() {
         .add_message::<InfoMessage>()
         .add_systems(PreStartup, platform::setup_display)
         .add_systems(Startup, setup_sprites)
-        .add_systems(Startup, ui::setup_ui_camera)
-        .add_systems(Startup, ui::setup_connect_page)
-        .add_systems(Startup, ui::setup_game_panel)
-        .add_systems(Startup, ui::setup_resources_panel)
+        .add_systems(Startup, ui::setup::ui_camera)
+        .add_systems(Startup, ui::setup::connect_page)
+        .add_systems(Startup, ui::setup::game_panel)
+        .add_systems(Startup, ui::setup::resources_panel)
         .add_systems(Update, ui::info_label)
-        .add_systems(Update, ui::handle_buttons)
+        .add_systems(Update, ui::handle::buttons)
         .add_systems(
             Update,
-            ui::handle_place_factory_button
+            ui::handle::place_factory_button
                 .run_if(in_state(GameState::ShowGame).and_eager(in_state(PlayState::Idle))),
         )
         .add_systems(
             Update,
-            ui::handle_placing_factory.run_if(
+            ui::handle::placing_factory.run_if(
                 in_state(GameState::ShowGame).and_eager(in_state(PlayState::PlacingFactory)),
             ),
         )
@@ -175,7 +175,7 @@ pub fn run() {
         )
         .add_systems(
             Update,
-            ui::handle_connect_button.run_if(in_state(GameState::HandleConnectPage)),
+            ui::handle::connect_button.run_if(in_state(GameState::HandleConnectPage)),
         )
         .add_systems(
             Update,

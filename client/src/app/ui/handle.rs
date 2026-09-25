@@ -1,43 +1,30 @@
 use bevy::{
-    camera::{Camera, Camera2d, visibility::Visibility},
+    camera::{Camera, Camera2d},
     input::{ButtonInput, mouse::MouseButton},
-    input_focus::{
-        AutoFocus,
-        tab_navigation::{TabGroup, TabIndex},
-    },
     math::Vec3,
     sprite::Sprite,
-    text::{EditableText, EditableTextFilter, FontSize, TextCursorStyle, TextFont},
+    text::EditableText,
     transform::components::{GlobalTransform, Transform},
-    ui::{
-        AlignItems, BackgroundColor, BorderColor, BorderRadius, FlexDirection, Interaction,
-        IsDefaultUiCamera, JustifyContent, Node, PositionType, UiRect, Val, percent, px,
-        widget::Text,
-    },
-    utils::default,
+    ui::{BackgroundColor, Interaction},
     window::Window,
 };
-use bevy_color::{
-    Color, LinearRgba,
-    palettes::css::{DARK_SLATE_GRAY, WHITE},
-};
-use bevy_ecs::{
-    children, component::Component, entity::Entity, message::MessageReader, system::Res,
-};
+use bevy_ecs::{entity::Entity, system::Res};
 use bevy_ecs::{
     message::MessageWriter,
     query::{Changed, With},
     system::{Commands, Query, ResMut},
 };
 use bevy_state::state::NextState;
-use std::ops::DerefMut;
 
 use crate::app::{
-    ActionMessage, GameSprites, PlayState,
-    ui::{FactoryInPlacement, PlaceFactoryButton},
+    ActionMessage, GameSprites, GameState, InfoMessage, PlayState, PlayerName,
+    ui::{
+        ConnectButton, FactoryInPlacement, HOVERED_BUTTON, NORMAL_BUTTON, PlaceFactoryButton,
+        PlayerNameField,
+    },
 };
 
-pub fn handle_placing_factory(
+pub fn placing_factory(
     mut factory_in_placement: Query<(Entity, &mut Transform), With<FactoryInPlacement>>,
     camera: Query<(&Camera, &GlobalTransform), With<Camera2d>>,
     windows: Query<&Window>,
@@ -71,7 +58,7 @@ pub fn handle_placing_factory(
     );
 }
 
-pub fn handle_place_factory_button(
+pub fn place_factory_button(
     button: Query<&Interaction, (With<PlaceFactoryButton>, Changed<Interaction>)>,
     mut play_state: ResMut<NextState<PlayState>>,
     sprites: Res<GameSprites>,
@@ -111,7 +98,7 @@ pub fn handle_place_factory_button(
     }
 }
 
-pub fn handle_connect_button(
+pub fn connect_button(
     connect_button: Query<&Interaction, (With<ConnectButton>, Changed<Interaction>)>,
     player_name_field: Query<&EditableText, With<PlayerNameField>>,
     mut info_label: MessageWriter<InfoMessage>,
@@ -135,7 +122,7 @@ pub fn handle_connect_button(
     }
 }
 
-pub fn handle_buttons(
+pub fn buttons(
     mut connect_button: Query<(&Interaction, &mut BackgroundColor), Changed<Interaction>>,
 ) {
     for (interaction, mut background_color) in &mut connect_button {
