@@ -4,7 +4,7 @@ use std::{net::TcpStream, str::FromStr};
 use tungstenite::{Bytes, stream::MaybeTlsStream};
 
 use crate::{
-    GameState, LeaveMessage, ProgramArgs,
+    CloseConnectionMessage, GameState, ProgramArgs,
     game::SpawnPoint,
     ui::{InfoMessage, PlayerName},
 };
@@ -41,7 +41,7 @@ pub fn plugin(app: &mut App) {
         read_server_messages.run_if(in_state(GameState::Play)),
     );
     app.add_systems(Update, send_actions.run_if(in_state(GameState::Play)));
-    app.add_systems(Update, leave.run_if(in_state(GameState::Play)));
+    app.add_systems(Update, close_connection.run_if(in_state(GameState::Play)));
 }
 
 pub fn connect(
@@ -216,15 +216,13 @@ pub fn send_actions(mut connection: ResMut<Connection>, mut actions: MessageRead
     connection.0.flush().unwrap();
 }
 
-pub fn leave(
+pub fn close_connection(
     mut connection: ResMut<Connection>,
-    mut leave_messages: MessageReader<LeaveMessage>,
-    mut next_state: ResMut<NextState<GameState>>,
+    mut leave_messages: MessageReader<CloseConnectionMessage>,
 ) {
     if leave_messages.read().count() > 0 {
         leave_messages.clear();
         let _ = connection.0.close(None);
         let _ = connection.0.flush();
-        next_state.set(GameState::Welcome);
     }
 }

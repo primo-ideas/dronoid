@@ -8,7 +8,10 @@ use bevy::{
 };
 use bevy_color::palettes::css::{DARK_SLATE_GRAY, WHITE};
 
-use crate::{GameState, LeaveMessage, ProgramArgs, game::GameSprites, net::ActionMessage};
+use crate::{
+    CloseConnectionMessage, GameState, LeaveGameMessage, ProgramArgs, game::GameSprites,
+    net::ActionMessage,
+};
 
 #[derive(Message)]
 pub struct InfoMessage(pub String);
@@ -39,6 +42,14 @@ fn border_color() -> BorderColor {
     BorderColor::all(BORDER_COLOR)
 }
 
+fn text_font_1() -> TextFont {
+    TextFont::from_font_size(FontSize::Vw(FONT_SIZE))
+}
+
+fn text_font_2() -> TextFont {
+    TextFont::from_font_size(FontSize::Vw(FONT_SIZE / 2.))
+}
+
 #[derive(Component)]
 pub struct HostFieldMarker;
 
@@ -67,7 +78,7 @@ pub struct ConnectPageMarker;
 pub struct GamePanelMarker;
 
 #[derive(Component)]
-pub struct ResourcesPanelMarker;
+pub struct ResourcesTextMarker;
 
 #[derive(Component)]
 pub struct FactoryInPlacementMarker;
@@ -136,7 +147,6 @@ fn spawn_game_menu(mut commands: Commands) {
     commands
         .spawn((
             DespawnOnExit(GameState::Play),
-            ResourcesPanelMarker,
             BackgroundColor {
                 0: Color::LinearRgba(LinearRgba::rgb(0.1, 0.1, 0.1)),
             },
@@ -154,14 +164,8 @@ fn spawn_game_menu(mut commands: Commands) {
             },
         ))
         .with_children(|parent| {
-            parent.spawn((
-                Text::new("Minerals:"),
-                TextFont::from_font_size(FontSize::VMin(FONT_SIZE)),
-            ));
-            parent.spawn((
-                Text::new("<nb>"),
-                TextFont::from_font_size(FontSize::VMin(FONT_SIZE)),
-            ));
+            parent.spawn((Text::new("Minerals:"), text_font_2()));
+            parent.spawn((ResourcesTextMarker, Text::new("<nb>"), text_font_2()));
         });
 
     commands.spawn((
@@ -180,10 +184,7 @@ fn spawn_game_menu(mut commands: Commands) {
         },
         Interaction::default(),
         border_color(),
-        children![(
-            Text::new("Leave"),
-            TextFont::from_font_size(FontSize::VMin(FONT_SIZE)),
-        )],
+        children![(Text::new("Leave"), text_font_2(),)],
     ));
 
     commands
@@ -220,10 +221,7 @@ fn spawn_game_menu(mut commands: Commands) {
                     ..default()
                 },
                 border_color(),
-                children![(
-                    Text::new("Spawn factory"),
-                    TextFont::from_font_size(FontSize::VMin(FONT_SIZE)),
-                )],
+                children![(Text::new("Spawn factory"), text_font_2(),)],
             ));
         });
 }
@@ -237,7 +235,7 @@ fn spawn_info_label(mut commands: Commands) {
         },
         InfoLabelMarker,
         Text::new(""),
-        TextFont::from_font_size(FontSize::VMin(FONT_SIZE)),
+        text_font_1(),
     ));
 }
 
@@ -297,7 +295,7 @@ fn spawn_welcome_menu(
                                     ..Default::default()
                                 },
                                 Text::new("Host"),
-                                TextFont::from_font_size(FontSize::VMin(FONT_SIZE)),
+                                text_font_1(),
                             ));
                             parent.spawn((
                                 HostFieldMarker,
@@ -309,7 +307,7 @@ fn spawn_welcome_menu(
                                     ..default()
                                 },
                                 host_editable_text,
-                                TextFont::from_font_size(FontSize::VMin(FONT_SIZE)),
+                                text_font_1(),
                                 TabIndex(0),
                                 TextCursorStyle {
                                     color: bevy_color::Color::Srgba(WHITE),
@@ -325,7 +323,7 @@ fn spawn_welcome_menu(
                                     ..Default::default()
                                 },
                                 Text::new("Port"),
-                                TextFont::from_font_size(FontSize::VMin(FONT_SIZE)),
+                                text_font_1(),
                             ));
                             parent.spawn((
                                 PortFieldMarker,
@@ -337,7 +335,7 @@ fn spawn_welcome_menu(
                                     ..default()
                                 },
                                 port_editable_text,
-                                TextFont::from_font_size(FontSize::VMin(FONT_SIZE)),
+                                text_font_1(),
                                 TabIndex(1),
                                 TextCursorStyle {
                                     color: bevy_color::Color::Srgba(WHITE),
@@ -359,7 +357,7 @@ fn spawn_welcome_menu(
                                 ..Default::default()
                             },
                             Text::new("Player name"),
-                            TextFont::from_font_size(FontSize::VMin(FONT_SIZE)),
+                            text_font_1(),
                         ));
                         parent.spawn((
                             PlayerNameFieldMarker,
@@ -371,7 +369,7 @@ fn spawn_welcome_menu(
                                 ..default()
                             },
                             player_name_editable_text,
-                            TextFont::from_font_size(FontSize::VMin(FONT_SIZE)),
+                            text_font_1(),
                             AutoFocus,
                             TabIndex(2),
                             TextCursorStyle {
@@ -396,10 +394,7 @@ fn spawn_welcome_menu(
                                 ..default()
                             },
                             border_color(),
-                            children![(
-                                Text::new("Connect"),
-                                TextFont::from_font_size(FontSize::VMin(FONT_SIZE)),
-                            )],
+                            children![(Text::new("Connect"), text_font_1(),)],
                         ));
                     });
                 });
@@ -506,7 +501,8 @@ fn handle_connect_button(
 
 fn handle_leave_game_button(
     button: Query<&Interaction, (With<LeaveGameButtonMarker>, Changed<Interaction>)>,
-    mut leave_message: MessageWriter<LeaveMessage>,
+    mut close_connection_message: MessageWriter<CloseConnectionMessage>,
+    mut leave_game_message: MessageWriter<LeaveGameMessage>,
 ) {
     let maybe_interaction = button.iter().next();
     if maybe_interaction.is_none() {
@@ -515,7 +511,8 @@ fn handle_leave_game_button(
     let interaction = maybe_interaction.unwrap();
     match *interaction {
         Interaction::Pressed => {
-            leave_message.write(LeaveMessage);
+            close_connection_message.write(CloseConnectionMessage);
+            leave_game_message.write(LeaveGameMessage);
         }
         _ => {}
     }

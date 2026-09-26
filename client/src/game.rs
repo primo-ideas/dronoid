@@ -1,10 +1,11 @@
 use bevy::{
     input::mouse::{AccumulatedMouseMotion, AccumulatedMouseScroll},
     prelude::*,
+    text::TextSection,
 };
 use std::collections::HashMap;
 
-use crate::{GameState, net::StateMessage};
+use crate::{GameState, LeaveGameMessage, net::StateMessage, ui::ResourcesTextMarker};
 
 #[derive(Resource, Default)]
 pub struct SpawnPoint(pub (f32, f32));
@@ -19,9 +20,23 @@ pub fn plugin(app: &mut App) {
     app.init_resource::<SpawnPoint>();
     app.init_resource::<Entities>();
     app.init_resource::<GameSprites>();
+    app.add_message::<LeaveGameMessage>();
     app.add_systems(Update, prepare.run_if(in_state(GameState::PrepareGame)));
     app.add_systems(Update, handle_camera.run_if(in_state(GameState::Play)));
     app.add_systems(Update, show_game.run_if(in_state(GameState::Play)));
+    app.add_systems(Update, leave_game.run_if(in_state(GameState::Play)));
+}
+
+fn leave_game(
+    mut leave_messages: MessageReader<LeaveGameMessage>,
+    mut next_state: ResMut<NextState<GameState>>,
+    mut entities: ResMut<Entities>,
+) {
+    if leave_messages.read().count() > 0 {
+        leave_messages.clear();
+        entities.0.clear();
+        next_state.set(GameState::Welcome);
+    }
 }
 
 fn prepare(
@@ -78,11 +93,14 @@ fn handle_camera(
 fn show_game(
     mut state_messages: MessageReader<StateMessage>,
     mut entities: Query<&mut Transform>,
+    mut resources_text: Query<&mut Text, With<ResourcesTextMarker>>,
     mut r_entities: ResMut<Entities>,
     r_sprites: Res<GameSprites>,
     mut commands: Commands,
 ) {
     for state_message in state_messages.read() {
+        *resources_text.single_mut().unwrap().get_text_mut() =
+            state_message.0.minerals_cnt.to_string();
         for entity_state in state_message.0.entities_in_zone.iter() {
             if let Some(existing_entity) = r_entities.0.get(&entity_state.id) {
                 if let Ok(mut transform) = entities.get_mut(*existing_entity) {
@@ -94,7 +112,11 @@ fn show_game(
                 let mut transform = Transform::from_xyz(entity_state.pos.0, entity_state.pos.1, 0.);
                 transform.scale.x = *size;
                 transform.scale.y = *size;
-                let entity = commands.spawn((transform, Sprite::from_image(image_hdl.clone())));
+                let entity = commands.spawn((
+                    DespawnOnExit(GameState::Play),
+                    transform,
+                    Sprite::from_image(image_hdl.clone()),
+                ));
                 r_entities.0.insert(entity_state.id, entity.id());
             }
         }

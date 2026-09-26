@@ -23,7 +23,10 @@ struct Args {
 }
 
 #[derive(Message)]
-pub struct LeaveMessage;
+pub struct LeaveGameMessage;
+
+#[derive(Message)]
+pub struct CloseConnectionMessage;
 
 #[derive(Resource)]
 pub struct ProgramArgs {
@@ -57,14 +60,15 @@ fn main() -> () {
                 })
                 .set(WindowPlugin {
                     primary_window: Some(Window {
-                        resolution: WindowResolution::new(640, 480),
+                        present_mode: bevy::window::PresentMode::Immediate,
+                        resolution: WindowResolution::new(800, 450),
                         ..Default::default()
                     }),
                     ..Default::default()
                 }),
             TabNavigationPlugin,
         ))
-        .add_message::<LeaveMessage>()
+        .add_message::<CloseConnectionMessage>()
         .init_state::<GameState>()
         .insert_resource(ProgramArgs {
             hostname: args.hostname,
