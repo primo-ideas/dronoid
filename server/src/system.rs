@@ -21,8 +21,8 @@ use crate::{
     resource::{
         ControlsR, NewPlayerReceiver, Players, RapierBodies, RapierBroadPhase, RapierCCDSolver,
         RapierColliders, RapierImpulseJointSet, RapierIntegrationParameters, RapierIslandManager,
-        RapierMultibodyJointSet, RapierNarrowPhase, RapierPipeline, RulesR, TerrainGenerator,
-        Timers, TransportStopper,
+        RapierMultibodyJointSet, RapierNarrowPhase, RapierPipeline, RapierSoftBodies, RulesR,
+        TerrainGenerator, Timers, TransportStopper,
     },
 };
 
@@ -296,6 +296,7 @@ pub(crate) fn physics(
     mut rapier_pipeline: ResMut<RapierPipeline>,
     mut rapier_bodies: ResMut<RapierBodies>,
     mut rapier_colliders: ResMut<RapierColliders>,
+    mut rapier_softbodies: ResMut<RapierSoftBodies>,
 ) {
     rapier_pipeline.0.step(
         Vector::new(0., 0.),
@@ -307,6 +308,7 @@ pub(crate) fn physics(
         &mut rapier_colliders.0,
         &mut rapier_impulse_joint_set.0,
         &mut rapier_multibody_joint_set.0,
+        &mut rapier_softbodies.0,
         &mut rapier_ccd_solver.0,
         &(),
         &(),

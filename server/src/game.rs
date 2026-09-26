@@ -21,6 +21,7 @@ use crate::resource::RapierIslandManager;
 use crate::resource::RapierMultibodyJointSet;
 use crate::resource::RapierNarrowPhase;
 use crate::resource::RapierPipeline;
+use crate::resource::RapierSoftBodies;
 use crate::resource::RulesR;
 use crate::resource::TerrainGenerator;
 use crate::resource::Timers;
@@ -57,6 +58,7 @@ pub fn run_game(
         .insert_resource(RapierIslandManager::default())
         .insert_resource(RapierMultibodyJointSet::default())
         .insert_resource(RapierNarrowPhase::default())
+        .insert_resource(RapierSoftBodies::default())
         .insert_resource(RapierPipeline::default())
         .insert_resource(RapierBodies::default())
         .insert_resource(RapierColliders::default())
