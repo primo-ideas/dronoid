@@ -1,6 +1,9 @@
 #![forbid(unsafe_code)]
 
-use bevy::{asset::AssetMetaCheck, input_focus::tab_navigation::TabNavigationPlugin, prelude::*};
+use bevy::{
+    asset::AssetMetaCheck, input_focus::tab_navigation::TabNavigationPlugin, prelude::*,
+    window::WindowResolution,
+};
 use clap::Parser;
 
 mod game;
@@ -40,6 +43,7 @@ fn main() -> () {
                 })
                 .set(WindowPlugin {
                     primary_window: Some(Window {
+                        resolution: WindowResolution::new(640, 480),
                         present_mode: bevy::window::PresentMode::Immediate,
                         ..Default::default()
                     }),

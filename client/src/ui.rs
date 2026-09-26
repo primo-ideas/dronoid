@@ -81,6 +81,10 @@ pub struct FactoryInPlacementMarker;
 pub fn plugin(app: &mut App) {
     app.init_state::<UiState>();
     app.add_message::<InfoMessage>();
+    app.insert_resource(PlayerName {
+        0: "Player".to_string(),
+    });
+    app.insert_resource(ClearColor(Color::srgb(0., 0., 0.)));
     app.add_systems(Startup, setup_sprites);
     app.add_systems(Startup, setup_ui_camera);
     app.add_systems(Startup, setup_leave_game_button);
@@ -89,14 +93,39 @@ pub fn plugin(app: &mut App) {
     app.add_systems(Startup, setup_resources_panel);
     app.add_systems(Update, handle_all_buttons);
     app.add_systems(Update, handle_info_label);
-    app.add_systems(Update, handle_placing_factory);
-    app.add_systems(Update, handle_place_factory_button);
-    app.add_systems(Update, handle_connect_button);
-    app.add_systems(Update, handle_leave_game_button);
-    app.add_systems(Update, show_connect_page);
-    app.add_systems(Update, show_game_panel);
-    app.add_systems(Update, show_leave_game_button);
-    app.add_systems(Update, show_resources_panel);
+    app.add_systems(
+        Update,
+        handle_placing_factory
+            .run_if(in_state(GameState::ShowGame).and_then(in_state(UiState::PlacingFactory))),
+    );
+    app.add_systems(
+        Update,
+        handle_place_factory_button.run_if(in_state(GameState::ShowGame)),
+    );
+    app.add_systems(
+        Update,
+        handle_connect_button.run_if(in_state(GameState::ShowConnectPage)),
+    );
+    app.add_systems(
+        Update,
+        handle_leave_game_button.run_if(in_state(GameState::ShowGame)),
+    );
+    app.add_systems(
+        Update,
+        show_connect_page.run_if(in_state(GameState::ShowConnectPage)),
+    );
+    app.add_systems(
+        Update,
+        show_game_panel.run_if(in_state(GameState::ShowGame)),
+    );
+    app.add_systems(
+        Update,
+        show_leave_game_button.run_if(in_state(GameState::ShowGame)),
+    );
+    app.add_systems(
+        Update,
+        show_resources_panel.run_if(in_state(GameState::ShowGame)),
+    );
 }
 
 fn setup_sprites(asset_server: Res<AssetServer>, mut game_sprites: ResMut<GameSprites>) {
