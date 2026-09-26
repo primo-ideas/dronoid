@@ -470,8 +470,7 @@ fn handle_place_factory_button(
             ));
             play_state.set(UiState::PlacingFactory);
         }
-        Interaction::Hovered => {}
-        Interaction::None => {}
+        _ => {}
     }
 }
 
