@@ -1,5 +1,4 @@
 use bevy::{
-    ecs::relationship::RelatedSpawnerCommands,
     input_focus::{
         AutoFocus,
         tab_navigation::{TabGroup, TabIndex},
@@ -82,10 +81,10 @@ pub fn plugin(app: &mut App) {
     app.insert_resource(ClearColor(Color::srgb(0., 0., 0.)));
     app.add_systems(Startup, setup_sprites);
     app.add_systems(Startup, setup_ui_camera);
-    app.add_systems(Startup, setup_leave_game_button);
-    app.add_systems(Startup, setup_connect_page);
-    app.add_systems(Startup, setup_game_panel);
-    app.add_systems(Startup, setup_resources_panel);
+    app.add_systems(OnEnter(GameState::Welcome), spawn_connect_page);
+    app.add_systems(OnEnter(GameState::Play), spawn_leave_game_button);
+    app.add_systems(OnEnter(GameState::Play), spawn_game_panel);
+    app.add_systems(OnEnter(GameState::Play), setup_resources_panel);
     app.add_systems(Update, handle_all_buttons);
     app.add_systems(Update, handle_info_label);
     app.add_systems(
@@ -124,82 +123,6 @@ fn setup_sprites(asset_server: Res<AssetServer>, mut game_sprites: ResMut<GameSp
         dronoid_protocol::Kind::Spawn,
         (9. / 128., asset_server.load("textures/spawn.png")),
     );
-}
-
-fn setup_host_port(
-    parent: &mut RelatedSpawnerCommands<'_, ChildOf>,
-    program_options: Res<ProgramArgs>,
-) {
-    let mut host_editable_text = EditableText::new(program_options.hostname.to_string().as_str());
-    host_editable_text.cursor_width = 0.4;
-    host_editable_text.max_characters = Some(62);
-    let mut port_editable_text = EditableText::new(program_options.port.to_string().as_str());
-    port_editable_text.cursor_width = 0.4;
-    port_editable_text.max_characters = Some(5);
-
-    parent
-        .spawn(Node {
-            align_items: AlignItems::Center,
-            ..default()
-        })
-        .with_children(|parent| {
-            parent.spawn((
-                Node {
-                    align_items: AlignItems::Center,
-                    ..Default::default()
-                },
-                Text::new("Host"),
-                TextFont::from_font_size(FontSize::VMin(FONT_SIZE)),
-            ));
-            parent.spawn((
-                HostFieldMarker,
-                Node {
-                    padding: px(PADDING).all(),
-                    width: px(200),
-                    border: px(BORDER_THICKNESS).all(),
-                    border_radius: border_radius(),
-                    ..default()
-                },
-                host_editable_text,
-                TextFont::from_font_size(FontSize::VMin(FONT_SIZE)),
-                TabIndex(0),
-                TextCursorStyle {
-                    color: bevy_color::Color::Srgba(WHITE),
-                    ..Default::default()
-                },
-                EditableTextFilter::new(|c| c.is_ascii() && c.is_ascii_graphic()),
-                BackgroundColor(DARK_SLATE_GRAY.into()),
-                border_color(),
-            ));
-            parent.spawn((
-                Node {
-                    align_items: AlignItems::Center,
-                    ..Default::default()
-                },
-                Text::new("Port"),
-                TextFont::from_font_size(FontSize::VMin(FONT_SIZE)),
-            ));
-            parent.spawn((
-                PortFieldMarker,
-                Node {
-                    padding: px(PADDING).all(),
-                    width: px(80),
-                    border: px(BORDER_THICKNESS).all(),
-                    border_radius: border_radius(),
-                    ..default()
-                },
-                port_editable_text,
-                TextFont::from_font_size(FontSize::VMin(FONT_SIZE)),
-                TabIndex(1),
-                TextCursorStyle {
-                    color: bevy_color::Color::Srgba(WHITE),
-                    ..Default::default()
-                },
-                EditableTextFilter::new(|c| c.is_ascii() && c.is_ascii_graphic() && c.is_numeric()),
-                BackgroundColor(DARK_SLATE_GRAY.into()),
-                border_color(),
-            ));
-        });
 }
 
 fn setup_ui_camera(mut commands: Commands) {
@@ -244,7 +167,7 @@ fn setup_resources_panel(mut commands: Commands) {
         });
 }
 
-fn setup_leave_game_button(mut commands: Commands) {
+fn spawn_leave_game_button(mut commands: Commands) {
     commands.spawn((
         DespawnOnExit(GameState::Play),
         LeaveGameButtonMarker,
@@ -269,7 +192,7 @@ fn setup_leave_game_button(mut commands: Commands) {
     ));
 }
 
-fn setup_game_panel(mut commands: Commands) {
+fn spawn_game_panel(mut commands: Commands) {
     commands
         .spawn((
             DespawnOnExit(GameState::Play),
@@ -313,7 +236,7 @@ fn setup_game_panel(mut commands: Commands) {
         });
 }
 
-fn setup_connect_page(
+fn spawn_connect_page(
     program_options: Res<ProgramArgs>,
     player_name: Res<PlayerName>,
     mut state: ResMut<NextState<GameState>>,
@@ -373,7 +296,80 @@ fn setup_connect_page(
                     TabGroup::new(0),
                 ))
                 .with_children(|parent| {
-                    setup_host_port(parent, program_options);
+                    let mut host_editable_text =
+                        EditableText::new(program_options.hostname.to_string().as_str());
+                    host_editable_text.cursor_width = 0.4;
+                    host_editable_text.max_characters = Some(62);
+                    let mut port_editable_text =
+                        EditableText::new(program_options.port.to_string().as_str());
+                    port_editable_text.cursor_width = 0.4;
+                    port_editable_text.max_characters = Some(5);
+
+                    parent
+                        .spawn(Node {
+                            align_items: AlignItems::Center,
+                            ..default()
+                        })
+                        .with_children(|parent| {
+                            parent.spawn((
+                                Node {
+                                    align_items: AlignItems::Center,
+                                    ..Default::default()
+                                },
+                                Text::new("Host"),
+                                TextFont::from_font_size(FontSize::VMin(FONT_SIZE)),
+                            ));
+                            parent.spawn((
+                                HostFieldMarker,
+                                Node {
+                                    padding: px(PADDING).all(),
+                                    width: px(200),
+                                    border: px(BORDER_THICKNESS).all(),
+                                    border_radius: border_radius(),
+                                    ..default()
+                                },
+                                host_editable_text,
+                                TextFont::from_font_size(FontSize::VMin(FONT_SIZE)),
+                                TabIndex(0),
+                                TextCursorStyle {
+                                    color: bevy_color::Color::Srgba(WHITE),
+                                    ..Default::default()
+                                },
+                                EditableTextFilter::new(|c| c.is_ascii() && c.is_ascii_graphic()),
+                                BackgroundColor(DARK_SLATE_GRAY.into()),
+                                border_color(),
+                            ));
+                            parent.spawn((
+                                Node {
+                                    align_items: AlignItems::Center,
+                                    ..Default::default()
+                                },
+                                Text::new("Port"),
+                                TextFont::from_font_size(FontSize::VMin(FONT_SIZE)),
+                            ));
+                            parent.spawn((
+                                PortFieldMarker,
+                                Node {
+                                    padding: px(PADDING).all(),
+                                    width: px(80),
+                                    border: px(BORDER_THICKNESS).all(),
+                                    border_radius: border_radius(),
+                                    ..default()
+                                },
+                                port_editable_text,
+                                TextFont::from_font_size(FontSize::VMin(FONT_SIZE)),
+                                TabIndex(1),
+                                TextCursorStyle {
+                                    color: bevy_color::Color::Srgba(WHITE),
+                                    ..Default::default()
+                                },
+                                EditableTextFilter::new(|c| {
+                                    c.is_ascii() && c.is_ascii_graphic() && c.is_numeric()
+                                }),
+                                BackgroundColor(DARK_SLATE_GRAY.into()),
+                                border_color(),
+                            ));
+                        });
 
                     parent.spawn(Node { ..default() }).with_children(|parent| {
                         parent.spawn((

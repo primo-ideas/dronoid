@@ -2596,7 +2596,6 @@ version = "0.1.0"
 dependencies = [
  "bevy",
  "bevy_color",
- "bevy_state",
  "bson",
  "clap",
  "display-info",
