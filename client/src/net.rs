@@ -4,8 +4,8 @@ use std::{net::TcpStream, str::FromStr};
 use tungstenite::{Bytes, stream::MaybeTlsStream};
 
 use crate::{
-    ProgramArgs,
-    game::{GameState, SpawnPoint},
+    GameState, LeaveMessage, ProgramArgs,
+    game::SpawnPoint,
     ui::{InfoMessage, PlayerName},
 };
 
@@ -38,10 +38,10 @@ pub fn plugin(app: &mut App) {
     );
     app.add_systems(
         Update,
-        read_server_messages.run_if(in_state(GameState::ShowGame)),
+        read_server_messages.run_if(in_state(GameState::Play)),
     );
-    app.add_systems(Update, send_actions.run_if(in_state(GameState::ShowGame)));
-    app.add_systems(Update, leave.run_if(in_state(GameState::ShowGame)));
+    app.add_systems(Update, send_actions.run_if(in_state(GameState::Play)));
+    app.add_systems(Update, leave.run_if(in_state(GameState::Play)));
 }
 
 pub fn connect(
@@ -71,12 +71,12 @@ pub fn connect(
                 info_label.write(InfoMessage(
                     format!("Connection failed: {}", err).to_string(),
                 ));
-                next_state.set(GameState::HandleConnectPage);
+                next_state.set(GameState::Welcome);
             }
         }
     } else {
         info_label.write(InfoMessage("URI build failed".to_string()));
-        next_state.set(GameState::HandleConnectPage);
+        next_state.set(GameState::Welcome);
     }
 }
 
@@ -96,7 +96,7 @@ pub fn authenticate_send_request(
             "Auth request serialization error: {}",
             maybe_auth_request.err().unwrap()
         )));
-        state.set(GameState::ShowConnectPage);
+        state.set(GameState::Welcome);
         return;
     }
     let auth_request = maybe_auth_request.unwrap();
@@ -109,7 +109,7 @@ pub fn authenticate_send_request(
             "Auth request send error: {}",
             result.err().unwrap()
         )));
-        state.set(GameState::ShowConnectPage);
+        state.set(GameState::Welcome);
         return;
     }
 
@@ -119,7 +119,7 @@ pub fn authenticate_send_request(
             "Auth request send error: {}",
             result.err().unwrap()
         )));
-        state.set(GameState::ShowConnectPage);
+        state.set(GameState::Welcome);
         return;
     }
     info_label.write(InfoMessage("Waiting auth response".to_string().to_string()));
@@ -138,7 +138,7 @@ pub fn authenticate_wait_response(
             "Auth response read error: {}",
             maybe_response.err().unwrap()
         )));
-        state.set(GameState::ShowConnectPage);
+        state.set(GameState::Welcome);
         return;
     }
 
@@ -152,7 +152,7 @@ pub fn authenticate_wait_response(
                 "Auth response deserialization error: {}",
                 maybe_auth_response.err().unwrap()
             )));
-            state.set(GameState::ShowConnectPage);
+            state.set(GameState::Welcome);
             return;
         }
         match maybe_auth_response.unwrap() {
@@ -164,7 +164,7 @@ pub fn authenticate_wait_response(
                         "Server declined authentication: {}",
                         auth_response.text
                     )));
-                    state.set(GameState::ShowConnectPage);
+                    state.set(GameState::Welcome);
                     return;
                 }
                 spawn_point.0 = auth_response.spawn_point;
@@ -185,7 +185,7 @@ pub fn authenticate_wait_response(
         info_label.write(InfoMessage(
             "Unexpected non binary auth response".to_string(),
         ));
-        state.set(GameState::ShowConnectPage);
+        state.set(GameState::Welcome);
     }
 }
 
@@ -218,12 +218,12 @@ pub fn send_actions(mut connection: ResMut<Connection>, mut actions: MessageRead
 
 pub fn leave(
     mut connection: ResMut<Connection>,
-    mut leave_message: MessageReader<ActionMessage>,
+    mut leave_message: MessageReader<LeaveMessage>,
     mut next_state: ResMut<NextState<GameState>>,
 ) {
     if leave_message.read().count() > 0 {
         let _ = connection.0.close(None);
         let _ = connection.0.flush();
     }
-    next_state.set(GameState::ShowConnectPage);
+    next_state.set(GameState::Welcome);
 }

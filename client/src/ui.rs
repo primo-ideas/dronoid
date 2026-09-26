@@ -8,13 +8,8 @@ use bevy::{
     text::{EditableText, EditableTextFilter, TextCursorStyle},
 };
 use bevy_color::palettes::css::{DARK_SLATE_GRAY, WHITE};
-use std::ops::DerefMut;
 
-use crate::{
-    ProgramArgs,
-    game::{GameSprites, GameState},
-    net::ActionMessage,
-};
+use crate::{GameState, LeaveMessage, ProgramArgs, game::GameSprites, net::ActionMessage};
 
 #[derive(Message)]
 pub struct InfoMessage(pub String);
@@ -96,35 +91,19 @@ pub fn plugin(app: &mut App) {
     app.add_systems(
         Update,
         handle_placing_factory
-            .run_if(in_state(GameState::ShowGame).and_then(in_state(UiState::PlacingFactory))),
+            .run_if(in_state(GameState::Play).and_then(in_state(UiState::PlacingFactory))),
     );
     app.add_systems(
         Update,
-        handle_place_factory_button.run_if(in_state(GameState::ShowGame)),
+        handle_place_factory_button.run_if(in_state(GameState::Play)),
     );
     app.add_systems(
         Update,
-        handle_connect_button.run_if(in_state(GameState::HandleConnectPage)),
+        handle_connect_button.run_if(in_state(GameState::Welcome)),
     );
     app.add_systems(
         Update,
-        handle_leave_game_button.run_if(in_state(GameState::ShowGame)),
-    );
-    app.add_systems(
-        Update,
-        show_connect_page.run_if(in_state(GameState::ShowConnectPage)),
-    );
-    app.add_systems(
-        Update,
-        show_game_panel.run_if(in_state(GameState::ShowGame)),
-    );
-    app.add_systems(
-        Update,
-        show_leave_game_button.run_if(in_state(GameState::ShowGame)),
-    );
-    app.add_systems(
-        Update,
-        show_resources_panel.run_if(in_state(GameState::ShowGame)),
+        handle_leave_game_button.run_if(in_state(GameState::Play)),
     );
 }
 
@@ -234,6 +213,7 @@ fn setup_ui_camera(mut commands: Commands) {
 fn setup_resources_panel(mut commands: Commands) {
     commands
         .spawn((
+            DespawnOnExit(GameState::Play),
             ResourcesPanelMarker,
             Visibility::Hidden,
             BackgroundColor {
@@ -266,6 +246,7 @@ fn setup_resources_panel(mut commands: Commands) {
 
 fn setup_leave_game_button(mut commands: Commands) {
     commands.spawn((
+        DespawnOnExit(GameState::Play),
         LeaveGameButtonMarker,
         Visibility::Hidden,
         BackgroundColor {
@@ -291,6 +272,7 @@ fn setup_leave_game_button(mut commands: Commands) {
 fn setup_game_panel(mut commands: Commands) {
     commands
         .spawn((
+            DespawnOnExit(GameState::Play),
             GamePanelMarker,
             Visibility::Hidden,
             BackgroundColor {
@@ -374,6 +356,7 @@ fn setup_connect_page(
                 ..default()
             },
             Visibility::Visible,
+            DespawnOnExit(GameState::Welcome),
             ConnectPageMarker,
         ))
         .with_children(|parent| {
@@ -446,7 +429,7 @@ fn setup_connect_page(
                 });
         });
 
-    state.set(GameState::HandleConnectPage);
+    state.set(GameState::Welcome);
 }
 
 fn handle_placing_factory(
@@ -550,15 +533,17 @@ fn handle_connect_button(
 fn handle_leave_game_button(
     button: Query<&Interaction, (With<LeaveGameButtonMarker>, Changed<Interaction>)>,
     mut state: ResMut<NextState<GameState>>,
+    mut leave_message: MessageWriter<LeaveMessage>,
 ) {
     let maybe_interaction = button.iter().next();
     if maybe_interaction.is_none() {
         return;
     }
     let interaction = maybe_interaction.unwrap();
+    leave_message.write(LeaveMessage);
     match *interaction {
         Interaction::Pressed => {
-            state.set(GameState::ShowConnectPage);
+            state.set(GameState::Welcome);
         }
         _ => {}
     }
@@ -589,33 +574,4 @@ fn handle_info_label(
     for info_event in info_events.read() {
         info_label.0 = info_event.0.clone();
     }
-}
-
-fn show_connect_page(
-    mut visibilities: ParamSet<(
-        Query<&mut Visibility, With<ConnectPageMarker>>,
-        Query<&mut Visibility, With<ResourcesPanelMarker>>,
-        Query<&mut Visibility, With<GamePanelMarker>>,
-        Query<&mut Visibility, With<LeaveGameButtonMarker>>,
-    )>,
-) {
-    *visibilities.p0().single_mut().unwrap().deref_mut() = Visibility::Visible;
-    *visibilities.p1().single_mut().unwrap().deref_mut() = Visibility::Hidden;
-    *visibilities.p2().single_mut().unwrap().deref_mut() = Visibility::Hidden;
-    *visibilities.p3().single_mut().unwrap().deref_mut() = Visibility::Hidden;
-}
-
-fn show_resources_panel(mut resources_panel: Query<&mut Visibility, With<ResourcesPanelMarker>>) {
-    let mut visibility = resources_panel.iter_mut().next().unwrap();
-    *visibility.deref_mut() = Visibility::Visible;
-}
-
-fn show_game_panel(mut game_panel: Query<&mut Visibility, With<GamePanelMarker>>) {
-    let mut visibility = game_panel.iter_mut().next().unwrap();
-    *visibility.deref_mut() = Visibility::Visible;
-}
-
-fn show_leave_game_button(mut button: Query<&mut Visibility, With<LeaveGameButtonMarker>>) {
-    let mut visibility = button.iter_mut().next().unwrap();
-    *visibility.deref_mut() = Visibility::Visible;
 }

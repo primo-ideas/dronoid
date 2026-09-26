@@ -4,19 +4,7 @@ use bevy::{
 };
 use std::{collections::HashMap, ops::DerefMut};
 
-use crate::{net::StateMessage, ui::ConnectPageMarker};
-
-#[derive(Resource, States, Debug, Clone, PartialEq, Eq, Hash, Default)]
-pub enum GameState {
-    #[default]
-    ShowConnectPage,
-    HandleConnectPage,
-    Connect,
-    AuthenticateSendRequest,
-    AuthenticateWaitResponse,
-    PrepareGame,
-    ShowGame,
-}
+use crate::{GameState, net::StateMessage, ui::ConnectPageMarker};
 
 #[derive(Resource, Default)]
 pub struct SpawnPoint(pub (f32, f32));
@@ -28,13 +16,12 @@ pub struct Entities(pub HashMap<u32, Entity>);
 pub struct GameSprites(pub HashMap<dronoid_protocol::Kind, (f32, Handle<Image>)>);
 
 pub fn plugin(app: &mut App) {
-    app.init_state::<GameState>();
     app.init_resource::<SpawnPoint>();
     app.init_resource::<Entities>();
     app.init_resource::<GameSprites>();
     app.add_systems(Update, prepare.run_if(in_state(GameState::PrepareGame)));
-    app.add_systems(Update, handle_camera.run_if(in_state(GameState::ShowGame)));
-    app.add_systems(Update, show_game.run_if(in_state(GameState::ShowGame)));
+    app.add_systems(Update, handle_camera.run_if(in_state(GameState::Play)));
+    app.add_systems(Update, show_game.run_if(in_state(GameState::Play)));
 }
 
 fn prepare(
@@ -52,7 +39,7 @@ fn prepare(
     }
 
     *transform = Transform::from_xyz(spawn_point.0.0, spawn_point.0.1, 0.);
-    state.set(GameState::ShowGame);
+    state.set(GameState::Play);
 }
 
 fn handle_camera(

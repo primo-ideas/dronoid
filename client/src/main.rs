@@ -22,12 +22,27 @@ struct Args {
     route: String,
 }
 
+#[derive(Message)]
+pub struct LeaveMessage;
+
 #[derive(Resource)]
 pub struct ProgramArgs {
     pub hostname: String,
     pub port: u16,
     pub no_tls: bool,
     pub route: String,
+}
+
+#[derive(Resource, States, Debug, Clone, PartialEq, Eq, Hash, Default)]
+pub enum GameState {
+    #[default]
+    // ShowConnectPage,
+    Welcome,
+    Connect,
+    AuthenticateSendRequest,
+    AuthenticateWaitResponse,
+    PrepareGame,
+    Play,
 }
 
 fn main() -> () {
@@ -51,6 +66,8 @@ fn main() -> () {
                 }),
             TabNavigationPlugin,
         ))
+        .add_message::<LeaveMessage>()
+        .init_state::<GameState>()
         .insert_resource(ProgramArgs {
             hostname: args.hostname,
             port: args.port,

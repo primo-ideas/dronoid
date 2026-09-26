@@ -24,3 +24,4 @@ rustls = { version = "0.23.45", default-features = false, features = [
     "ring",
 ] }
 tungstenite = { version = "0.30.0", features = ["rustls-tls-webpki-roots"] }
+bevy_state = "0.19.1"
