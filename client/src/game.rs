@@ -2,9 +2,9 @@ use bevy::{
     input::mouse::{AccumulatedMouseMotion, AccumulatedMouseScroll},
     prelude::*,
 };
-use std::{collections::HashMap, ops::DerefMut};
+use std::collections::HashMap;
 
-use crate::{GameState, net::StateMessage, ui::ConnectPageMarker};
+use crate::{GameState, net::StateMessage};
 
 #[derive(Resource, Default)]
 pub struct SpawnPoint(pub (f32, f32));
@@ -26,13 +26,9 @@ pub fn plugin(app: &mut App) {
 
 fn prepare(
     mut camera: Query<(&mut Projection, &mut Transform), With<Camera2d>>,
-    mut connect_page: Query<&mut Visibility, With<ConnectPageMarker>>,
     mut state: ResMut<NextState<GameState>>,
     spawn_point: Res<SpawnPoint>,
 ) {
-    let mut connect_page_visibility = connect_page.iter_mut().next().unwrap();
-    *connect_page_visibility.deref_mut() = Visibility::Hidden;
-
     let (mut projection, mut transform) = camera.iter_mut().next().unwrap();
     if let Projection::Orthographic(ref mut ortho) = *projection {
         ortho.scale = 0.1;

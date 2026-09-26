@@ -139,7 +139,6 @@ fn spawn_game_menu(mut commands: Commands) {
         .spawn((
             DespawnOnExit(GameState::Play),
             ResourcesPanelMarker,
-            Visibility::Hidden,
             BackgroundColor {
                 0: Color::LinearRgba(LinearRgba::rgb(0.1, 0.1, 0.1)),
             },
@@ -170,7 +169,6 @@ fn spawn_game_menu(mut commands: Commands) {
     commands.spawn((
         DespawnOnExit(GameState::Play),
         LeaveGameButtonMarker,
-        Visibility::Hidden,
         BackgroundColor {
             0: Color::LinearRgba(LinearRgba::rgb(0.1, 0.1, 0.1)),
         },
@@ -194,7 +192,6 @@ fn spawn_game_menu(mut commands: Commands) {
         .spawn((
             DespawnOnExit(GameState::Play),
             GamePanelMarker,
-            Visibility::Hidden,
             BackgroundColor {
                 0: Color::LinearRgba(LinearRgba::rgb(0.1, 0.1, 0.1)),
             },
@@ -249,7 +246,7 @@ fn spawn_info_label(mut commands: Commands) {
 fn spawn_welcome_menu(
     program_options: Res<ProgramArgs>,
     player_name: Res<PlayerName>,
-    mut state: ResMut<NextState<GameState>>,
+    // mut state: ResMut<NextState<GameState>>,
     mut commands: Commands,
 ) {
     let mut player_name_editable_text = EditableText::new(player_name.0.to_string().as_str());
@@ -265,7 +262,6 @@ fn spawn_welcome_menu(
                 align_items: AlignItems::Center,
                 ..default()
             },
-            Visibility::Visible,
             DespawnOnExit(GameState::Welcome),
             ConnectPageMarker,
         ))
@@ -411,8 +407,6 @@ fn spawn_welcome_menu(
                     });
                 });
         });
-
-    state.set(GameState::Welcome);
 }
 
 fn handle_placing_factory(
@@ -515,7 +509,7 @@ fn handle_connect_button(
 
 fn handle_leave_game_button(
     button: Query<&Interaction, (With<LeaveGameButtonMarker>, Changed<Interaction>)>,
-    mut state: ResMut<NextState<GameState>>,
+    // mut state: ResMut<NextState<GameState>>,
     mut leave_message: MessageWriter<LeaveMessage>,
 ) {
     let maybe_interaction = button.iter().next();
@@ -523,10 +517,10 @@ fn handle_leave_game_button(
         return;
     }
     let interaction = maybe_interaction.unwrap();
-    leave_message.write(LeaveMessage);
     match *interaction {
         Interaction::Pressed => {
-            state.set(GameState::Welcome);
+            leave_message.write(LeaveMessage);
+            // state.set(GameState::Welcome);
         }
         _ => {}
     }

@@ -218,12 +218,13 @@ pub fn send_actions(mut connection: ResMut<Connection>, mut actions: MessageRead
 
 pub fn leave(
     mut connection: ResMut<Connection>,
-    mut leave_message: MessageReader<LeaveMessage>,
+    mut leave_messages: MessageReader<LeaveMessage>,
     mut next_state: ResMut<NextState<GameState>>,
 ) {
-    if leave_message.read().count() > 0 {
+    if leave_messages.read().count() > 0 {
+        leave_messages.clear();
         let _ = connection.0.close(None);
         let _ = connection.0.flush();
+        next_state.set(GameState::Welcome);
     }
-    next_state.set(GameState::Welcome);
 }
