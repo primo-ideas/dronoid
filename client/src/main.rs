@@ -44,7 +44,7 @@ fn main() -> () {
                 .set(WindowPlugin {
                     primary_window: Some(Window {
                         resolution: WindowResolution::new(640, 480),
-                        present_mode: bevy::window::PresentMode::Immediate,
+                        // present_mode: bevy::window::PresentMode::Immediate,
                         ..Default::default()
                     }),
                     ..Default::default()

@@ -38,16 +38,10 @@ pub fn plugin(app: &mut App) {
     );
     app.add_systems(
         Update,
-        read_server_messages.run_if(in_state(GameState::AuthenticateWaitResponse)),
+        read_server_messages.run_if(in_state(GameState::ShowGame)),
     );
-    app.add_systems(
-        Update,
-        send_actions.run_if(in_state(GameState::AuthenticateWaitResponse)),
-    );
-    app.add_systems(
-        Update,
-        leave.run_if(in_state(GameState::AuthenticateWaitResponse)),
-    );
+    app.add_systems(Update, send_actions.run_if(in_state(GameState::ShowGame)));
+    app.add_systems(Update, leave.run_if(in_state(GameState::ShowGame)));
 }
 
 pub fn connect(
@@ -222,9 +216,14 @@ pub fn send_actions(mut connection: ResMut<Connection>, mut actions: MessageRead
     connection.0.flush().unwrap();
 }
 
-pub fn leave(mut connection: ResMut<Connection>, mut leave_message: MessageReader<ActionMessage>) {
+pub fn leave(
+    mut connection: ResMut<Connection>,
+    mut leave_message: MessageReader<ActionMessage>,
+    mut next_state: ResMut<NextState<GameState>>,
+) {
     if leave_message.read().count() > 0 {
         let _ = connection.0.close(None);
         let _ = connection.0.flush();
     }
+    next_state.set(GameState::ShowConnectPage);
 }

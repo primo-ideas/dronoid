@@ -104,7 +104,7 @@ pub fn plugin(app: &mut App) {
     );
     app.add_systems(
         Update,
-        handle_connect_button.run_if(in_state(GameState::ShowConnectPage)),
+        handle_connect_button.run_if(in_state(GameState::HandleConnectPage)),
     );
     app.add_systems(
         Update,
