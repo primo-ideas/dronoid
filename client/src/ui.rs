@@ -81,10 +81,11 @@ pub fn plugin(app: &mut App) {
     app.insert_resource(ClearColor(Color::srgb(0., 0., 0.)));
     app.add_systems(Startup, setup_sprites);
     app.add_systems(Startup, setup_ui_camera);
-    app.add_systems(OnEnter(GameState::Welcome), spawn_connect_page);
-    app.add_systems(OnEnter(GameState::Play), spawn_leave_game_button);
-    app.add_systems(OnEnter(GameState::Play), spawn_game_panel);
-    app.add_systems(OnEnter(GameState::Play), setup_resources_panel);
+    app.add_systems(Startup, spawn_info_label);
+    app.add_systems(OnEnter(GameState::Welcome), spawn_welcome_menu);
+    app.add_systems(OnEnter(GameState::Play), spawn_game_menu);
+    // app.add_systems(OnEnter(GameState::Play), spawn_game_panel);
+    // app.add_systems(OnEnter(GameState::Play), setup_resources_panel);
     app.add_systems(Update, handle_all_buttons);
     app.add_systems(Update, handle_info_label);
     app.add_systems(
@@ -133,7 +134,7 @@ fn setup_ui_camera(mut commands: Commands) {
     ));
 }
 
-fn setup_resources_panel(mut commands: Commands) {
+fn spawn_game_menu(mut commands: Commands) {
     commands
         .spawn((
             DespawnOnExit(GameState::Play),
@@ -165,9 +166,7 @@ fn setup_resources_panel(mut commands: Commands) {
                 TextFont::from_font_size(FontSize::VMin(FONT_SIZE)),
             ));
         });
-}
 
-fn spawn_leave_game_button(mut commands: Commands) {
     commands.spawn((
         DespawnOnExit(GameState::Play),
         LeaveGameButtonMarker,
@@ -190,9 +189,7 @@ fn spawn_leave_game_button(mut commands: Commands) {
             TextFont::from_font_size(FontSize::VMin(FONT_SIZE)),
         )],
     ));
-}
 
-fn spawn_game_panel(mut commands: Commands) {
     commands
         .spawn((
             DespawnOnExit(GameState::Play),
@@ -236,7 +233,20 @@ fn spawn_game_panel(mut commands: Commands) {
         });
 }
 
-fn spawn_connect_page(
+fn spawn_info_label(mut commands: Commands) {
+    commands.spawn((
+        Node {
+            position_type: PositionType::Absolute,
+            bottom: px(20.),
+            ..default()
+        },
+        InfoLabelMarker,
+        Text::new(""),
+        TextFont::from_font_size(FontSize::VMin(FONT_SIZE)),
+    ));
+}
+
+fn spawn_welcome_menu(
     program_options: Res<ProgramArgs>,
     player_name: Res<PlayerName>,
     mut state: ResMut<NextState<GameState>>,
@@ -245,29 +255,6 @@ fn spawn_connect_page(
     let mut player_name_editable_text = EditableText::new(player_name.0.to_string().as_str());
     player_name_editable_text.cursor_width = 0.4;
     player_name_editable_text.max_characters = Some(20);
-    commands
-        .spawn((
-            Node {
-                width: percent(100.),
-                height: percent(100.),
-                justify_content: JustifyContent::Center,
-                align_items: AlignItems::Center,
-                ..default()
-            },
-            Visibility::Visible,
-        ))
-        .with_children(|parent| {
-            parent.spawn((
-                Node {
-                    position_type: PositionType::Absolute,
-                    bottom: px(20.),
-                    ..default()
-                },
-                InfoLabelMarker,
-                Text::new(""),
-                TextFont::from_font_size(FontSize::VMin(FONT_SIZE)),
-            ));
-        });
 
     commands
         .spawn((
