@@ -36,7 +36,6 @@ pub struct ProgramArgs {
 #[derive(Resource, States, Debug, Clone, PartialEq, Eq, Hash, Default)]
 pub enum GameState {
     #[default]
-    // ShowConnectPage,
     Welcome,
     Connect,
     AuthenticateSendRequest,
@@ -59,7 +58,6 @@ fn main() -> () {
                 .set(WindowPlugin {
                     primary_window: Some(Window {
                         resolution: WindowResolution::new(640, 480),
-                        // present_mode: bevy::window::PresentMode::Immediate,
                         ..Default::default()
                     }),
                     ..Default::default()

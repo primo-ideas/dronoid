@@ -23,7 +23,7 @@ pub enum UiState {
 #[derive(Resource)]
 pub struct PlayerName(pub String);
 
-const FONT_SIZE: f32 = 4.;
+const FONT_SIZE: f32 = 3.;
 const PADDING: f32 = 3.;
 const BORDER_RADIUS: f32 = 8.;
 const BORDER_THICKNESS: f32 = 2.2;
@@ -84,8 +84,6 @@ pub fn plugin(app: &mut App) {
     app.add_systems(Startup, spawn_info_label);
     app.add_systems(OnEnter(GameState::Welcome), spawn_welcome_menu);
     app.add_systems(OnEnter(GameState::Play), spawn_game_menu);
-    // app.add_systems(OnEnter(GameState::Play), spawn_game_panel);
-    // app.add_systems(OnEnter(GameState::Play), setup_resources_panel);
     app.add_systems(Update, handle_all_buttons);
     app.add_systems(Update, handle_info_label);
     app.add_systems(
@@ -246,7 +244,6 @@ fn spawn_info_label(mut commands: Commands) {
 fn spawn_welcome_menu(
     program_options: Res<ProgramArgs>,
     player_name: Res<PlayerName>,
-    // mut state: ResMut<NextState<GameState>>,
     mut commands: Commands,
 ) {
     let mut player_name_editable_text = EditableText::new(player_name.0.to_string().as_str());
@@ -509,7 +506,6 @@ fn handle_connect_button(
 
 fn handle_leave_game_button(
     button: Query<&Interaction, (With<LeaveGameButtonMarker>, Changed<Interaction>)>,
-    // mut state: ResMut<NextState<GameState>>,
     mut leave_message: MessageWriter<LeaveMessage>,
 ) {
     let maybe_interaction = button.iter().next();
@@ -520,7 +516,6 @@ fn handle_leave_game_button(
     match *interaction {
         Interaction::Pressed => {
             leave_message.write(LeaveMessage);
-            // state.set(GameState::Welcome);
         }
         _ => {}
     }
