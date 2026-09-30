@@ -4,31 +4,46 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-dronoid-logger.workspace = true
-dronoid-protocol.workspace = true
+dronoid-protocol = { version = "0.1.0", path = "../protocol" }
 
-anyhow.workspace = true
-bevy = { workspace = true, features = ["std", "multi_threaded", "dynamic_linking"] }
-bevy_app.workspace = true
-bevy_ecs.workspace = true
-bson = { workspace = true, features = ["serde"] }
-clap = { workspace = true, features = ["derive", "std", "help", "usage", "env"] }
-crossbeam-channel = { workspace = true, features = ["std"] }
-futures.workspace = true
-noise.workspace = true
-rand.workspace = true
-rapier2d.workspace = true
-serde.workspace = true
-thiserror.workspace = true
-tokio = { workspace = true, features = [
+anyhow = "1.0.104"
+bevy = { version = "0.19.1", default-features = false, features = [
+    "std",
+    "multi_threaded",
+    "dynamic_linking",
+] }
+bevy_app = "0.19.1"
+bevy_ecs = "0.19.1"
+bson = { version = "3.1.0", features = ["serde"] }
+clap = { version = "4.6.7", features = [
+    "derive",
+    "std",
+    "help",
+    "usage",
+    "env",
+] }
+colored = "3.1.1"
+crossbeam-channel = { version = "0.5.17", features = ["std"] }
+futures = "0.3.34"
+noise = "0.9.0"
+rand = "0.10.3"
+rapier2d = "0.36.0"
+thiserror = "2.0.21"
+tokio = { version = "1.53.1", features = [
     "time",
     "macros",
+    "net",
     "rt",
     "sync",
-    "test-util",
     "rt-multi-thread",
     "signal",
 ] }
-tokio-tungstenite = { workspace = true, features = ["handshake", "connect"] }
-tracing.workspace = true
-tungstenite.workspace = true
+tokio-tungstenite = { version = "0.30.0", features = ["handshake", "connect"] }
+tracing = "0.1.44"
+tracing-subscriber = { version = "0.3.23", features = [
+    "env-filter",
+    "registry",
+] }
+tungstenite = "0.30.0"
+rusqlite = { version = "0.40.2", features = ["bundled"] }
+tempfile = "3.27.0"

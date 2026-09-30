@@ -1,16 +1,19 @@
-use bevy_ecs::{
-    message::{MessageReader, MessageWriter},
-    resource::Resource,
-    system::{Commands, Res, ResMut},
-};
-use bevy_state::state::NextState;
-use dronoid_protocol::{AuthenticationRequest, ClientMessage};
+use bevy::prelude::*;
+use dronoid_protocol::{AuthenticationRequest, ClientMessage, ServerMessage};
 use std::{net::TcpStream, str::FromStr};
-use tungstenite::{Bytes, Message, stream::MaybeTlsStream};
+use tungstenite::{Bytes, stream::MaybeTlsStream};
 
-use crate::app::{
-    ActionMessage, GameState, InfoMessage, PlayerName, ProgramOptions, ServerMessage, SpawnPoint,
+use crate::{
+    CloseConnectionMessage, GameState, ProgramArgs,
+    game::SpawnPoint,
+    ui::{InfoMessage, PlayerName},
 };
+
+#[derive(Message)]
+pub struct StateMessage(pub dronoid_protocol::State);
+
+#[derive(Message)]
+pub struct ActionMessage(pub dronoid_protocol::Action);
 
 #[derive(Resource)]
 pub struct Connection(pub tungstenite::WebSocket<MaybeTlsStream<TcpStream>>);
@@ -21,19 +24,39 @@ impl Connection {
     }
 }
 
+pub fn plugin(app: &mut App) {
+    app.add_message::<StateMessage>();
+    app.add_message::<ActionMessage>();
+    app.add_systems(Update, connect.run_if(in_state(GameState::Connect)));
+    app.add_systems(
+        Update,
+        authenticate_send_request.run_if(in_state(GameState::AuthenticateSendRequest)),
+    );
+    app.add_systems(
+        Update,
+        authenticate_wait_response.run_if(in_state(GameState::AuthenticateWaitResponse)),
+    );
+    app.add_systems(
+        Update,
+        read_server_messages.run_if(in_state(GameState::Play)),
+    );
+    app.add_systems(Update, send_actions.run_if(in_state(GameState::Play)));
+    app.add_systems(Update, close_connection.run_if(in_state(GameState::Play)));
+}
+
 pub fn connect(
     mut info_label: MessageWriter<InfoMessage>,
     mut next_state: ResMut<NextState<GameState>>,
-    program_options: Res<ProgramOptions>,
+    program_options: Res<ProgramArgs>,
     mut commands: Commands,
 ) {
-    let mut protocol = "ws";
-    if let true = program_options.tls {
-        protocol = "wss";
+    let mut protocol = "wss";
+    if let true = program_options.no_tls {
+        protocol = "ws";
     }
     let addr = format!(
         "{}://{}:{}/{}",
-        protocol, program_options.hostname, program_options.port, program_options.suffix
+        protocol, program_options.hostname, program_options.port, program_options.route
     )
     .to_string();
     info_label.write(InfoMessage(addr.clone()));
@@ -48,12 +71,12 @@ pub fn connect(
                 info_label.write(InfoMessage(
                     format!("Connection failed: {}", err).to_string(),
                 ));
-                next_state.set(GameState::HandleConnectPage);
+                next_state.set(GameState::Welcome);
             }
         }
     } else {
         info_label.write(InfoMessage("URI build failed".to_string()));
-        next_state.set(GameState::HandleConnectPage);
+        next_state.set(GameState::Welcome);
     }
 }
 
@@ -73,7 +96,7 @@ pub fn authenticate_send_request(
             "Auth request serialization error: {}",
             maybe_auth_request.err().unwrap()
         )));
-        state.set(GameState::ShowConnectPage);
+        state.set(GameState::Welcome);
         return;
     }
     let auth_request = maybe_auth_request.unwrap();
@@ -86,7 +109,7 @@ pub fn authenticate_send_request(
             "Auth request send error: {}",
             result.err().unwrap()
         )));
-        state.set(GameState::ShowConnectPage);
+        state.set(GameState::Welcome);
         return;
     }
 
@@ -96,7 +119,7 @@ pub fn authenticate_send_request(
             "Auth request send error: {}",
             result.err().unwrap()
         )));
-        state.set(GameState::ShowConnectPage);
+        state.set(GameState::Welcome);
         return;
     }
     info_label.write(InfoMessage("Waiting auth response".to_string().to_string()));
@@ -115,7 +138,7 @@ pub fn authenticate_wait_response(
             "Auth response read error: {}",
             maybe_response.err().unwrap()
         )));
-        state.set(GameState::ShowConnectPage);
+        state.set(GameState::Welcome);
         return;
     }
 
@@ -129,7 +152,7 @@ pub fn authenticate_wait_response(
                 "Auth response deserialization error: {}",
                 maybe_auth_response.err().unwrap()
             )));
-            state.set(GameState::ShowConnectPage);
+            state.set(GameState::Welcome);
             return;
         }
         match maybe_auth_response.unwrap() {
@@ -141,7 +164,7 @@ pub fn authenticate_wait_response(
                         "Server declined authentication: {}",
                         auth_response.text
                     )));
-                    state.set(GameState::ShowConnectPage);
+                    state.set(GameState::Welcome);
                     return;
                 }
                 spawn_point.0 = auth_response.spawn_point;
@@ -162,24 +185,24 @@ pub fn authenticate_wait_response(
         info_label.write(InfoMessage(
             "Unexpected non binary auth response".to_string(),
         ));
-        state.set(GameState::ShowConnectPage);
+        state.set(GameState::Welcome);
     }
 }
 
 pub fn read_server_messages(
     mut connection: ResMut<Connection>,
-    mut server_messages: MessageWriter<ServerMessage>,
+    mut server_messages: MessageWriter<StateMessage>,
 ) {
-    // while connection.0.can_read() {
-    while let Ok(Message::Binary(message)) = connection.0.read() {
+    while let Ok(tungstenite::Message::Binary(message)) = connection.0.read() {
         let server_message = bson::deserialize_from_slice::<dronoid_protocol::ServerMessage>(
             &message.iter().as_slice(),
         )
         .unwrap();
 
-        server_messages.write(ServerMessage(server_message));
+        if let ServerMessage::State(state) = server_message {
+            server_messages.write(StateMessage(state));
+        }
     }
-    // }
 }
 
 pub fn send_actions(mut connection: ResMut<Connection>, mut actions: MessageReader<ActionMessage>) {
@@ -187,8 +210,19 @@ pub fn send_actions(mut connection: ResMut<Connection>, mut actions: MessageRead
         let binary_to_send = bson::serialize_to_vec(&action.0).unwrap();
         connection
             .0
-            .write(Message::Binary(Bytes::from(binary_to_send)))
+            .write(tungstenite::Message::Binary(Bytes::from(binary_to_send)))
             .unwrap();
     }
     connection.0.flush().unwrap();
+}
+
+pub fn close_connection(
+    mut connection: ResMut<Connection>,
+    mut leave_messages: MessageReader<CloseConnectionMessage>,
+) {
+    if leave_messages.read().count() > 0 {
+        leave_messages.clear();
+        let _ = connection.0.close(None);
+        let _ = connection.0.flush();
+    }
 }

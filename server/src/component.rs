@@ -66,7 +66,7 @@ impl Factory {
 }
 
 #[derive(Component, Default)]
-pub(crate) struct Resource;
+pub(crate) struct PlayerResources;
 
 #[derive(Component)]
 pub(crate) struct Beacon;

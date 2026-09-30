@@ -1,0 +1,545 @@
+use bevy::{
+    input_focus::{
+        AutoFocus,
+        tab_navigation::{TabGroup, TabIndex},
+    },
+    prelude::*,
+    text::{EditableText, EditableTextFilter, TextCursorStyle},
+};
+use bevy_color::palettes::css::{DARK_SLATE_GRAY, WHITE};
+
+use crate::{
+    CloseConnectionMessage, GameState, LeaveGameMessage, ProgramArgs, game::GameSprites,
+    net::ActionMessage,
+};
+
+#[derive(Message)]
+pub struct InfoMessage(pub String);
+
+#[derive(Resource, States, Debug, Clone, PartialEq, Eq, Hash, Default)]
+pub enum UiState {
+    #[default]
+    Idle,
+    PlacingFactory,
+}
+
+#[derive(Resource)]
+pub struct PlayerName(pub String);
+
+const FONT_SIZE: f32 = 2.2;
+const PADDING: f32 = 5.;
+const BORDER_RADIUS: f32 = 8.;
+const BORDER_THICKNESS: f32 = 2.6;
+const BORDER_COLOR: Color = Color::srgb_u8(0x34, 0xc6, 0xeb);
+const NORMAL_BUTTON: Color = Color::srgb(0.15, 0.15, 0.15);
+const HOVERED_BUTTON: Color = Color::srgb(0.25, 0.25, 0.25);
+
+fn border_radius() -> BorderRadius {
+    BorderRadius::all(Val::Px(BORDER_RADIUS))
+}
+
+fn border_color() -> BorderColor {
+    BorderColor::all(BORDER_COLOR)
+}
+
+fn text_font_1() -> TextFont {
+    TextFont::from_font_size(FontSize::Vw(FONT_SIZE))
+}
+
+fn text_font_2() -> TextFont {
+    TextFont::from_font_size(FontSize::Vw(FONT_SIZE / 2.))
+}
+
+#[derive(Component)]
+pub struct HostFieldMarker;
+
+#[derive(Component)]
+pub struct PortFieldMarker;
+
+#[derive(Component)]
+pub struct PlayerNameFieldMarker;
+
+#[derive(Component)]
+pub struct LeaveGameButtonMarker;
+
+#[derive(Component)]
+pub struct ConnectButtonMarker;
+
+#[derive(Component)]
+pub struct PlaceFactoryButtonMarker;
+
+#[derive(Component)]
+pub struct InfoLabelMarker;
+
+#[derive(Component)]
+pub struct ConnectPageMarker;
+
+#[derive(Component)]
+pub struct GamePanelMarker;
+
+#[derive(Component)]
+pub struct ResourcesTextMarker;
+
+#[derive(Component)]
+pub struct FactoryInPlacementMarker;
+
+pub fn plugin(app: &mut App) {
+    app.init_state::<UiState>();
+    app.add_message::<InfoMessage>();
+    app.insert_resource(PlayerName {
+        0: "Player".to_string(),
+    });
+    app.insert_resource(ClearColor(Color::srgb(0., 0., 0.)));
+    app.add_systems(Startup, setup_sprites);
+    app.add_systems(Startup, setup_ui_camera);
+    app.add_systems(Startup, spawn_info_label);
+    app.add_systems(OnEnter(GameState::Welcome), spawn_welcome_menu);
+    app.add_systems(OnEnter(GameState::Play), spawn_game_menu);
+    app.add_systems(Update, handle_all_buttons);
+    app.add_systems(Update, handle_info_label);
+    app.add_systems(
+        Update,
+        handle_placing_factory
+            .run_if(in_state(GameState::Play).and_then(in_state(UiState::PlacingFactory))),
+    );
+    app.add_systems(
+        Update,
+        handle_place_factory_button.run_if(in_state(GameState::Play)),
+    );
+    app.add_systems(
+        Update,
+        handle_connect_button.run_if(in_state(GameState::Welcome)),
+    );
+    app.add_systems(
+        Update,
+        handle_leave_game_button.run_if(in_state(GameState::Play)),
+    );
+}
+
+fn setup_sprites(asset_server: Res<AssetServer>, mut game_sprites: ResMut<GameSprites>) {
+    game_sprites.0.insert(
+        dronoid_protocol::Kind::Mineral,
+        (1. / 128., asset_server.load("textures/mineral.png")),
+    );
+    game_sprites.0.insert(
+        dronoid_protocol::Kind::Dronoid,
+        (3. / 128., asset_server.load("textures/dronoid.png")),
+    );
+    game_sprites.0.insert(
+        dronoid_protocol::Kind::Factory,
+        (6. / 128., asset_server.load("textures/factory.png")),
+    );
+    game_sprites.0.insert(
+        dronoid_protocol::Kind::Spawn,
+        (9. / 128., asset_server.load("textures/spawn.png")),
+    );
+}
+
+fn setup_ui_camera(mut commands: Commands) {
+    commands.spawn((
+        IsDefaultUiCamera,
+        Camera2d::default(),
+        Transform::from_xyz(0., 0., 0.),
+    ));
+}
+
+fn spawn_game_menu(mut commands: Commands) {
+    commands
+        .spawn((
+            DespawnOnExit(GameState::Play),
+            BackgroundColor {
+                0: Color::LinearRgba(LinearRgba::rgb(0.1, 0.1, 0.1)),
+            },
+            Node {
+                width: percent(30.),
+                height: percent(20.),
+                padding: percent(PADDING).all(),
+                margin: percent(2.).all(),
+                left: px(0),
+                top: px(0),
+                position_type: PositionType::Absolute,
+                border: px(BORDER_THICKNESS).all(),
+                border_radius: border_radius(),
+                ..default()
+            },
+        ))
+        .with_children(|parent| {
+            parent.spawn((Text::new("Minerals:"), text_font_2()));
+            parent.spawn((ResourcesTextMarker, Text::new("<nb>"), text_font_2()));
+        });
+
+    commands.spawn((
+        DespawnOnExit(GameState::Play),
+        LeaveGameButtonMarker,
+        BackgroundColor {
+            0: Color::LinearRgba(LinearRgba::rgb(0.1, 0.1, 0.1)),
+        },
+        Node {
+            left: px(0),
+            bottom: px(0),
+            position_type: PositionType::Absolute,
+            border: px(BORDER_THICKNESS).all(),
+            border_radius: border_radius(),
+            ..default()
+        },
+        Interaction::default(),
+        border_color(),
+        children![(Text::new("Leave"), text_font_1(),)],
+    ));
+
+    commands
+        .spawn((
+            DespawnOnExit(GameState::Play),
+            GamePanelMarker,
+            BackgroundColor {
+                0: Color::LinearRgba(LinearRgba::rgb(0.1, 0.1, 0.1)),
+            },
+            Node {
+                width: percent(20.),
+                height: percent(60.),
+                padding: percent(PADDING).all(),
+                margin: percent(2.).all(),
+                right: px(0),
+                top: px(0),
+                position_type: PositionType::Absolute,
+                border: px(BORDER_THICKNESS).all(),
+                border_radius: border_radius(),
+                ..default()
+            },
+        ))
+        .with_children(|parent| {
+            parent.spawn((
+                PlaceFactoryButtonMarker,
+                Interaction::default(),
+                Node {
+                    flex_grow: 1.,
+                    height: px(30),
+                    border: UiRect::all(px(BORDER_THICKNESS)),
+                    align_items: AlignItems::Center,
+                    justify_content: JustifyContent::Center,
+                    border_radius: border_radius(),
+                    ..default()
+                },
+                border_color(),
+                children![(Text::new("Spawn factory"), text_font_2(),)],
+            ));
+        });
+}
+
+fn spawn_info_label(mut commands: Commands) {
+    commands.spawn((
+        Node {
+            position_type: PositionType::Absolute,
+            bottom: px(20.),
+            ..default()
+        },
+        InfoLabelMarker,
+        Text::new(""),
+        text_font_1(),
+    ));
+}
+
+fn spawn_welcome_menu(
+    program_options: Res<ProgramArgs>,
+    player_name: Res<PlayerName>,
+    mut commands: Commands,
+) {
+    let mut player_name_editable_text = EditableText::new(player_name.0.to_string().as_str());
+    player_name_editable_text.cursor_width = 0.4;
+    player_name_editable_text.max_characters = Some(20);
+
+    commands
+        .spawn((
+            Node {
+                width: percent(100.),
+                height: percent(100.),
+                justify_content: JustifyContent::Center,
+                align_items: AlignItems::Center,
+                ..default()
+            },
+            DespawnOnExit(GameState::Welcome),
+            ConnectPageMarker,
+        ))
+        .with_children(|parent| {
+            parent
+                .spawn((
+                    Node {
+                        padding: UiRect::all(Val::Px(PADDING)),
+                        flex_direction: FlexDirection::Column,
+                        border: px(BORDER_THICKNESS).all(),
+                        border_radius: border_radius(),
+                        ..default()
+                    },
+                    border_color(),
+                    TabGroup::new(0),
+                ))
+                .with_children(|parent| {
+                    let mut host_editable_text =
+                        EditableText::new(program_options.hostname.to_string().as_str());
+                    host_editable_text.cursor_width = 0.4;
+                    host_editable_text.max_characters = Some(62);
+                    let mut port_editable_text =
+                        EditableText::new(program_options.port.to_string().as_str());
+                    port_editable_text.cursor_width = 0.4;
+                    port_editable_text.max_characters = Some(5);
+
+                    parent
+                        .spawn(Node {
+                            align_items: AlignItems::Center,
+                            ..default()
+                        })
+                        .with_children(|parent| {
+                            parent.spawn((
+                                Node {
+                                    align_items: AlignItems::Center,
+                                    ..Default::default()
+                                },
+                                Text::new("Host"),
+                                text_font_1(),
+                            ));
+                            parent.spawn((
+                                HostFieldMarker,
+                                Node {
+                                    padding: px(PADDING).all(),
+                                    width: px(200),
+                                    border: px(BORDER_THICKNESS).all(),
+                                    border_radius: border_radius(),
+                                    ..default()
+                                },
+                                host_editable_text,
+                                text_font_1(),
+                                TabIndex(0),
+                                TextCursorStyle {
+                                    color: bevy_color::Color::Srgba(WHITE),
+                                    ..Default::default()
+                                },
+                                EditableTextFilter::new(|c| c.is_ascii() && c.is_ascii_graphic()),
+                                BackgroundColor(DARK_SLATE_GRAY.into()),
+                                border_color(),
+                            ));
+                            parent.spawn((
+                                Node {
+                                    align_items: AlignItems::Center,
+                                    ..Default::default()
+                                },
+                                Text::new("Port"),
+                                text_font_1(),
+                            ));
+                            parent.spawn((
+                                PortFieldMarker,
+                                Node {
+                                    padding: px(PADDING).all(),
+                                    width: px(80),
+                                    border: px(BORDER_THICKNESS).all(),
+                                    border_radius: border_radius(),
+                                    ..default()
+                                },
+                                port_editable_text,
+                                text_font_1(),
+                                TabIndex(1),
+                                TextCursorStyle {
+                                    color: bevy_color::Color::Srgba(WHITE),
+                                    ..Default::default()
+                                },
+                                EditableTextFilter::new(|c| {
+                                    c.is_ascii() && c.is_ascii_graphic() && c.is_numeric()
+                                }),
+                                BackgroundColor(DARK_SLATE_GRAY.into()),
+                                border_color(),
+                            ));
+                        });
+
+                    parent.spawn(Node { ..default() }).with_children(|parent| {
+                        parent.spawn((
+                            Node {
+                                padding: px(PADDING).all(),
+                                align_items: AlignItems::Center,
+                                ..Default::default()
+                            },
+                            Text::new("Player name"),
+                            text_font_1(),
+                        ));
+                        parent.spawn((
+                            PlayerNameFieldMarker,
+                            Node {
+                                padding: px(PADDING).all(),
+                                width: px(200),
+                                border: px(BORDER_THICKNESS).all(),
+                                border_radius: border_radius(),
+                                ..default()
+                            },
+                            player_name_editable_text,
+                            text_font_1(),
+                            AutoFocus,
+                            TabIndex(2),
+                            TextCursorStyle {
+                                color: bevy_color::Color::Srgba(WHITE),
+                                ..Default::default()
+                            },
+                            EditableTextFilter::new(|c| c.is_ascii_alphabetic()),
+                            BackgroundColor(DARK_SLATE_GRAY.into()),
+                            border_color(),
+                        ));
+                        parent.spawn((
+                            ConnectButtonMarker,
+                            Interaction::default(),
+                            TabIndex(3),
+                            Node {
+                                padding: px(PADDING).all(),
+                                flex_grow: 1.,
+                                border: UiRect::all(px(BORDER_THICKNESS)),
+                                align_items: AlignItems::Center,
+                                justify_content: JustifyContent::Center,
+                                border_radius: border_radius(),
+                                ..default()
+                            },
+                            border_color(),
+                            children![(Text::new("Connect"), text_font_1(),)],
+                        ));
+                    });
+                });
+        });
+}
+
+fn handle_placing_factory(
+    mut factory_in_placement: Query<(Entity, &mut Transform), With<FactoryInPlacementMarker>>,
+    camera: Query<(&Camera, &GlobalTransform), With<Camera2d>>,
+    windows: Query<&Window>,
+    mut next_play_state: ResMut<NextState<UiState>>,
+    mouse_button: Res<ButtonInput<MouseButton>>,
+    mut actions: MessageWriter<ActionMessage>,
+    mut commands: Commands,
+) {
+    let (camera, camera_transform) = camera.single().unwrap();
+    let maybe_cursor_position = windows.single().unwrap().cursor_position();
+    if maybe_cursor_position.is_none() {
+        return;
+    }
+    let cursor_position = maybe_cursor_position.unwrap();
+    let (factory_entity, mut factory_sprite_transform) = factory_in_placement.single_mut().unwrap();
+    let position = camera
+        .viewport_to_world_2d(camera_transform, cursor_position)
+        .unwrap();
+    if mouse_button.just_pressed(MouseButton::Left) {
+        actions.write(ActionMessage(dronoid_protocol::Action::PlaceFactory((
+            position.x, position.y,
+        ))));
+        commands.entity(factory_entity).despawn();
+        next_play_state.set(UiState::Idle);
+        return;
+    }
+    factory_sprite_transform.translation = Vec3::new(
+        position.x,
+        position.y,
+        factory_sprite_transform.translation.z,
+    );
+}
+
+fn handle_place_factory_button(
+    button: Query<&Interaction, (With<PlaceFactoryButtonMarker>, Changed<Interaction>)>,
+    mut play_state: ResMut<NextState<UiState>>,
+    sprites: Res<GameSprites>,
+    windows: Query<&Window>,
+    camera: Query<(&Camera, &GlobalTransform), With<Camera2d>>,
+    mut commands: Commands,
+) {
+    let maybe_interaction = button.iter().next();
+    if maybe_interaction.is_none() {
+        return;
+    }
+    let interaction = maybe_interaction.unwrap();
+    let maybe_mouse_position = windows.iter().next().unwrap().cursor_position();
+    if maybe_mouse_position.is_none() {
+        return;
+    }
+    let mouse_position = maybe_mouse_position.unwrap();
+    let (camera, camera_position) = camera.iter().next().unwrap();
+    let position = camera
+        .viewport_to_world_2d(camera_position, mouse_position)
+        .unwrap();
+    match *interaction {
+        Interaction::Pressed => {
+            let (size, image_hdl) = sprites.0.get(&dronoid_protocol::Kind::Factory).unwrap();
+            let mut transform = Transform::from_xyz(position.x, position.y, 100.);
+            transform.scale.x = *size;
+            transform.scale.y = *size;
+            commands.spawn((
+                FactoryInPlacementMarker,
+                transform,
+                Sprite::from_image(image_hdl.clone()),
+            ));
+            play_state.set(UiState::PlacingFactory);
+        }
+        _ => {}
+    }
+}
+
+fn handle_connect_button(
+    connect_button: Query<&Interaction, (With<ConnectButtonMarker>, Changed<Interaction>)>,
+    player_name_field: Query<&EditableText, With<PlayerNameFieldMarker>>,
+    mut info_label: MessageWriter<InfoMessage>,
+    mut player_name: ResMut<PlayerName>,
+    mut state: ResMut<NextState<GameState>>,
+) {
+    let maybe_interaction = connect_button.iter().next();
+    if maybe_interaction.is_none() {
+        return;
+    }
+    let interaction = maybe_interaction.unwrap();
+    let player_name_text = player_name_field.iter().next().unwrap();
+    match *interaction {
+        Interaction::Pressed => {
+            let player_name_field_string = player_name_text.value().to_string();
+            player_name.0 = player_name_field_string;
+            info_label.write(InfoMessage("Connecting...".to_string()));
+            state.set(GameState::Connect);
+        }
+        _ => {}
+    }
+}
+
+fn handle_leave_game_button(
+    button: Query<&Interaction, (With<LeaveGameButtonMarker>, Changed<Interaction>)>,
+    mut close_connection_message: MessageWriter<CloseConnectionMessage>,
+    mut leave_game_message: MessageWriter<LeaveGameMessage>,
+) {
+    let maybe_interaction = button.iter().next();
+    if maybe_interaction.is_none() {
+        return;
+    }
+    let interaction = maybe_interaction.unwrap();
+    match *interaction {
+        Interaction::Pressed => {
+            close_connection_message.write(CloseConnectionMessage);
+            leave_game_message.write(LeaveGameMessage);
+        }
+        _ => {}
+    }
+}
+
+fn handle_all_buttons(
+    mut connect_button: Query<(&Interaction, &mut BackgroundColor), Changed<Interaction>>,
+) {
+    for (interaction, mut background_color) in &mut connect_button {
+        match *interaction {
+            Interaction::Hovered => {
+                *background_color = HOVERED_BUTTON.into();
+            }
+            Interaction::None => {
+                *background_color = NORMAL_BUTTON.into();
+            }
+            _ => {}
+        }
+    }
+}
+
+fn handle_info_label(
+    mut info_events: MessageReader<InfoMessage>,
+    mut info_label: Query<&mut Text, With<InfoLabelMarker>>,
+) {
+    let mut info_label = info_label.iter_mut().next().unwrap();
+
+    for info_event in info_events.read() {
+        info_label.0 = info_event.0.clone();
+    }
+}

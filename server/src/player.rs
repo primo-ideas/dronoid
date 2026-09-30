@@ -51,5 +51,5 @@ pub struct EnteringPlayer {
     pub id: u32,
     pub name: String,
     pub spawn_point: (f32, f32),
-    pub addr: SocketAddr,
+    pub _addr: SocketAddr,
 }

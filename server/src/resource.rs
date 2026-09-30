@@ -3,6 +3,7 @@ use crossbeam_channel::Receiver;
 use crossbeam_channel::Sender;
 use noise::NoiseFn;
 use noise::Perlin;
+use rapier2d::dynamics::SoftBodySet;
 use rapier2d::{
     dynamics::{
         CCDSolver, ImpulseJointSet, IntegrationParameters, IslandManager, MultibodyJointSet,
@@ -47,6 +48,9 @@ pub(crate) struct RapierColliders(pub(crate) ColliderSet);
 #[derive(Resource, Default)]
 pub(crate) struct RapierPipeline(pub(crate) PhysicsPipeline);
 
+#[derive(Resource, Default)]
+pub(crate) struct RapierSoftBodies(pub(crate) SoftBodySet);
+
 #[derive(Resource)]
 pub(crate) struct TransportStopper(pub(crate) Sender<()>);
 
@@ -57,10 +61,10 @@ pub(crate) struct NewPlayerReceiver(pub(crate) Receiver<EnteringPlayer>);
 pub(crate) struct Players(pub(crate) HashMap<u32, OnlinePlayer>);
 
 #[derive(Resource)]
-pub(crate) struct Controls(pub(crate) crate::Controls);
+pub(crate) struct ControlsR(pub(crate) crate::Controls);
 
 #[derive(Resource)]
-pub(crate) struct Rules(pub(crate) crate::Rules);
+pub(crate) struct RulesR(pub(crate) crate::Rules);
 
 #[derive(Resource)]
 pub(crate) struct TerrainGenerator {

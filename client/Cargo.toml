@@ -4,33 +4,25 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-dronoid-logger.workspace = true
-dronoid-protocol.workspace = true
+dronoid-protocol = { version = "0.1.0", path = "../protocol" }
 
-addr.workspace = true
-anyhow.workspace = true
-bevy_app.workspace = true
-bevy_color.workspace = true
-bevy_ecs = { workspace = true, features = ["debug"] }
-bevy_state.workspace = true
-bson.workspace = true
-clap = { workspace = true, features = ["derive", "env"] }
-crossbeam-channel.workspace = true
-validator.workspace = true
-wasm-bindgen.workspace = true
-web-sys = { workspace = true, features = ["Window", "Location", "BinaryType"] }
-
-[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-bevy = { workspace = true, default-features = true, features = ["2d", "bevy_ui_widgets", "bevy_color", "dynamic_linking"] }
-display-info.workspace = true
-rand.workspace = true
-rustls = { workspace = true, features = ["std", "tls12", "ring"] }
-tungstenite = { workspace = true, features = ["rustls-tls-webpki-roots"] }
-# tungstenite = { workspace = true, features = ["native-tls"] }
-# tokio.workspace = true
-
-[target.'cfg(target_arch = "wasm32")'.dependencies]
-bevy = { workspace = true, default-features = true, features = ["2d", "bevy_ui_widgets", "bevy_color"] }
-getrandom = { workspace = true, features = ["wasm_js"] }
-rand = { workspace = true, features = ["thread_rng"] }
-web-sys = { workspace = true, features = ["WebSocket", "MessageEvent", "ErrorEvent", "CloseEvent"] }
+bevy = { version = "0.19.1", features = [
+    "2d",
+    "bevy_ui_widgets",
+    "bevy_color",
+    "bevy_state",
+    "dynamic_linking",
+    "debug",
+] }
+bevy_color = "0.19.1"
+bson = { version = "3.1.0", features = ["serde"] }
+clap = { version = "4.6.7", features = ["derive", "env"] }
+display-info = "0.5.9"
+rand = "0.10.3"
+rustls = { version = "0.23.45", default-features = false, features = [
+    "std",
+    "tls12",
+    "ring",
+] }
+tungstenite = { version = "0.30.0", features = ["rustls-tls-webpki-roots"] }
+# bevy_state = "0.19.1"

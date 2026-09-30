@@ -17,13 +17,12 @@ use tokio::sync::Mutex;
 use tokio::time;
 use tokio_tungstenite::MaybeTlsStream;
 use tokio_tungstenite::tungstenite::Bytes;
-use tungstenite::handshake::server::{ErrorResponse, Request};
-use tungstenite::http::StatusCode;
-// use tokio_tungstenite::tungstenite::protocol::WebSocketConfig;
 use tokio_tungstenite::{WebSocketStream, tungstenite::Message};
 use tracing::{debug, info, trace};
+use tungstenite::handshake::server::{ErrorResponse, Request};
+use tungstenite::http::StatusCode;
 
-pub async fn run(
+pub async fn run_transport(
     database: Database,
     tcp_listener: TcpListener,
     transport_stopper_rx: Receiver<()>,
@@ -153,7 +152,7 @@ pub async fn serve_client(
                     id: player_entry.id,
                     name: player_entry.name,
                     spawn_point: player_entry.spawn_point,
-                    addr,
+                    _addr: addr,
                 })
                 .is_err()
             {
