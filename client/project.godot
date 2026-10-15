@@ -11,8 +11,22 @@ config_version=5
 [application]
 
 config/name="Dronoid"
+run/main_scene="uid://wya02ysbyx51"
 config/features=PackedStringArray("4.7", "Forward Plus")
 config/icon="res://icon.svg"
+
+[display]
+
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+
+[global_group]
+
+root=""
+
+[gui]
+
+theme/custom="uid://5e13js2am1yy"
 
 [physics]
 
