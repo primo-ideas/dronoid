@@ -4,6 +4,9 @@
 [ext_resource type="Script" uid="uid://bq7mpr5qtw06b" path="res://main.gd" id="1_h2yge"]
 [ext_resource type="Script" uid="uid://8ia2mc587heb" path="res://ui.gd" id="1_ig7tw"]
 
+[sub_resource type="LabelSettings" id="LabelSettings_1vivr"]
+font_size = 90
+
 [node name="Root" type="Node" unique_id=1746836841 groups=["root"]]
 script = ExtResource("1_h2yge")
 
@@ -69,5 +72,17 @@ layout_mode = 2
 [node name="ConnectButton" type="Button" parent="UI/CenterContainer/ConnectPanel/MarginContainer/HBoxContainer" unique_id=146046704]
 layout_mode = 2
 text = "Connect"
+
+[node name="Label" type="Label" parent="UI" unique_id=728247486]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -20.0
+offset_right = 20.0
+offset_bottom = 23.0
+grow_horizontal = 2
+text = "Dronoid"
+label_settings = SubResource("LabelSettings_1vivr")
 
 [connection signal="pressed" from="UI/CenterContainer/ConnectPanel/MarginContainer/HBoxContainer/ConnectButton" to="UI" method="_on_connect_button_pressed"]

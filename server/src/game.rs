@@ -1,3 +1,4 @@
+use anyhow::*;
 use bevy::prelude::*;
 use bevy_app::{App, AppExit, Startup};
 use crossbeam_channel::Receiver;
@@ -5,7 +6,6 @@ use crossbeam_channel::Sender;
 use tracing::info;
 
 use crate::Controls;
-use crate::Error;
 use crate::Rules;
 use crate::player::EnteringPlayer;
 use crate::resource::ControlsR;
@@ -41,7 +41,7 @@ pub fn run_game(
     controls: Controls,
     transport_stopper_tx: Sender<()>,
     new_player_rx: Receiver<EnteringPlayer>,
-) -> super::Result<()> {
+) -> anyhow::Result<()> {
     let exit = App::new()
         .add_plugins(MinimalPlugins)
         .add_systems(Startup, startup)
@@ -76,7 +76,7 @@ pub fn run_game(
         AppExit::Error(err_num) => {
             let num = err_num.get();
             match num {
-                1 => Err(Error::StopError(num)),
+                1 => Err(anyhow!(num)),
                 _ => {
                     todo!();
                 }

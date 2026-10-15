@@ -12,7 +12,6 @@ bevy = { version = "0.20.0", default-features = false, features = [
 ] }
 bevy_app = "0.20.0"
 bevy_ecs = "0.20.0"
-bson = { version = "3.1.0", features = ["serde"] }
 clap = { version = "4.6.7", features = [
     "derive",
     "std",
@@ -46,3 +45,4 @@ tracing-subscriber = { version = "0.3.23", features = [
 tungstenite = "0.30.0"
 rusqlite = { version = "0.40.2", features = ["bundled"] }
 tempfile = "3.27.0"
+serde_json = "1.0.154"

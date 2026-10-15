@@ -1,9 +1,7 @@
 use crate::Error;
 use crate::database::{self, Database};
 use crate::player::EnteringPlayer;
-use crate::protocol::{
-    Action, AuthenticationResponse, ClientMessage, Response, ServerMessage, is_name_valid,
-};
+use crate::protocol::{Action, ClientMessage, Response, ServerMessage, is_name_valid};
 use crossbeam_channel::TryRecvError::{Disconnected, Empty};
 use crossbeam_channel::{Receiver, Sender};
 use futures::{SinkExt, StreamExt};
@@ -107,11 +105,11 @@ pub async fn serve_client(
     let (action_sender, action_receiver) = crossbeam_channel::bounded::<Action>(100);
     let (state_sender, state_receiver) = crossbeam_channel::bounded::<ServerMessage>(100);
     let player_name: String;
-    if let Some(Ok(Message::Binary(binary))) = websocket.next().await {
+    if let Some(Ok(Message::Text(binary))) = websocket.next().await {
         debug!(sender = addr.to_string(), "Authentication request received");
         let maybe_authentication =
             bson::deserialize_from_slice::<ClientMessage>(binary.iter().as_slice())
-                .map_err(Error::Serde);
+                .map_err(Error::SerdeError);
         if maybe_authentication.is_err() {
             return (None, Err(Error::UnknownError));
         }
@@ -129,7 +127,7 @@ pub async fn serve_client(
         {
             (
                 None,
-                ServerMessage::Response(Response::AuthenticationResponse(
+                ServerMessage::Response(Response::Authentication(
                     AuthenticationResponse::already_playing(),
                 )),
             )
@@ -139,7 +137,7 @@ pub async fn serve_client(
 
         let response_text = bson::serialize_to_vec(&response).unwrap();
         if websocket
-            .send(Message::Binary(response_text.into()))
+            .send(Message::Text(response_text.into()))
             .await
             .is_err()
         {
@@ -177,7 +175,7 @@ pub async fn serve_client(
                     match state_receiver.try_recv() {
                         Ok(message) => {
                             let binary = Bytes::from(bson::serialize_to_vec(&message).unwrap());
-                            if websocket.send(Message::Binary(binary)).await.is_err()  {
+                            if websocket.send(Message::Text(binary)).await.is_err()  {
                                 break Err(Error::TransportError)
                             }
                         }
@@ -199,7 +197,7 @@ pub async fn serve_client(
                     return (Some(player_name), Err(Error::TransportError));
                 }
                 let message = maybe_msg.unwrap();
-                if let Message::Binary(bin) = message {
+                if let Message::Text(bin) = message {
                     trace!(sender = addr.to_string(), "Received action");
                     let maybe_action = bson::deserialize_from_slice::<Action>(bin.iter().as_slice());
 
@@ -230,15 +228,15 @@ async fn authentication(
         let spawn_point = player_entry.spawn_point;
         (
             Some(player_entry),
-            ServerMessage::Response(Response::AuthenticationResponse(
-                AuthenticationResponse::welcome(spawn_point),
-            )),
+            ServerMessage::Response(Response::Authentication(AuthenticationResponse::welcome(
+                spawn_point,
+            ))),
         )
     } else {
         if !is_name_valid(&player_name) {
             (
                 None,
-                ServerMessage::Response(Response::AuthenticationResponse(
+                ServerMessage::Response(Response::Authentication(
                     AuthenticationResponse::invalid_name(),
                 )),
             )
@@ -253,9 +251,9 @@ async fn authentication(
             let player_entry = database.add_player_entry(player_name, spawn_point);
             (
                 Some(player_entry),
-                ServerMessage::Response(Response::AuthenticationResponse(
-                    AuthenticationResponse::welcome(spawn_point),
-                )),
+                ServerMessage::Response(Response::Authentication(AuthenticationResponse::welcome(
+                    spawn_point,
+                ))),
             )
         }
     }

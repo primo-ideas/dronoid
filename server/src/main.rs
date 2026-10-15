@@ -27,45 +27,46 @@ mod net;
 mod player;
 mod protocol;
 mod resource;
+mod rules;
 mod system;
 
-pub type Result<T> = std::result::Result<T, Error>;
+// pub type Result<T> = std::result::Result<T, Error>;
 
-#[derive(Error, Debug)]
-pub enum Error {
-    #[error("Network could not be initialized: {0}")]
-    NetworkInitError(io::Error),
-    #[error("Did not stop properly: {0}")]
-    StopError(u8),
-    #[error("Could not flush state to transport")]
-    FlushError,
-    #[error("Failed to join session: {0}")]
-    WaitError(tokio::task::JoinError),
-    #[error("No message received or it was of an unexpected type")]
-    UnexpectedOrNoMessage,
-    #[error("Client could not connect: {0}")]
-    ClientConnectError(tungstenite::Error),
-    #[error("Client could not authentication: {0}")]
-    ClientFailedAuthentication(String),
-    #[error("Client could not send data: {0}")]
-    ClientSendError(tungstenite::Error),
-    #[error("Client read error")]
-    ClientReadError,
-    #[error("Client could not receive data: {0}")]
-    RecvError(tungstenite::Error),
-    #[error("Stopper channel failed: {0}")]
-    StopperError(crossbeam_channel::SendError<Stop>),
-    #[error("Unexpected error: {0}")]
-    UnexpectedError(&'static str),
-    #[error("Transport error")]
-    TransportError,
-    #[error("Not an action")]
-    NotAnAction,
-    #[error("Unknown error")]
-    UnknownError,
-    #[error("ser/de failed: {0}")]
-    Serde(bson::error::Error),
-}
+// #[derive(Error, Debug)]
+// pub enum Error {
+//     #[error("Network could not be initialized: {0}")]
+//     NetworkInitError(io::Error),
+//     #[error("Did not stop properly: {0}")]
+//     StopError(u8),
+//     #[error("Could not flush state to transport")]
+//     FlushError,
+//     #[error("Failed to join session: {0}")]
+//     WaitError(tokio::task::JoinError),
+//     #[error("No message received or it was of an unexpected type")]
+//     UnexpectedOrNoMessage,
+//     #[error("Client could not connect: {0}")]
+//     ClientConnectError(tungstenite::Error),
+//     #[error("Client could not authentication: {0}")]
+//     ClientFailedAuthentication(String),
+//     #[error("Client could not send data: {0}")]
+//     ClientSendError(tungstenite::Error),
+//     #[error("Client read error")]
+//     ClientReadError,
+//     #[error("Client could not receive data: {0}")]
+//     RecvError(tungstenite::Error),
+//     #[error("Stopper channel failed: {0}")]
+//     StopperError(crossbeam_channel::SendError<Stop>),
+//     #[error("Unexpected error: {0}")]
+//     UnexpectedError(&'static str),
+//     #[error("Transport error")]
+//     TransportError,
+//     #[error("Not an action")]
+//     NotAnAction,
+//     #[error("Unknown error")]
+//     UnknownError,
+//     #[error("serde failed: {0}")]
+//     SerdeError(serde_json::Error),
+// }
 
 #[derive(Clone, Debug)]
 pub struct ZoneExtensions {
@@ -75,7 +76,7 @@ pub struct ZoneExtensions {
 impl Default for ZoneExtensions {
     fn default() -> Self {
         Self {
-            factory: protocol::FACTORY_EXTENSION,
+            factory: rules::FACTORY_EXTENSION,
         }
     }
 }
@@ -94,13 +95,13 @@ pub struct Rules {
 impl Default for Rules {
     fn default() -> Self {
         Self {
-            terrain_scale: protocol::TERRAIN_SCALE,
-            mineral_threshold: protocol::MINERAL_THRESHOLD,
-            tick_duration: protocol::TICK_DURATION,
-            starting_minerals: protocol::STARTING_MINERALS,
-            terrain_seed: protocol::TERRAIN_SEED,
-            factory_extension: protocol::FACTORY_EXTENSION,
-            factory_cost: protocol::FACTORY_COST,
+            terrain_scale: rules::TERRAIN_SCALE,
+            mineral_threshold: rules::MINERAL_THRESHOLD,
+            tick_duration: rules::TICK_DURATION,
+            starting_minerals: rules::STARTING_MINERALS,
+            terrain_seed: rules::TERRAIN_SEED,
+            factory_extension: rules::FACTORY_EXTENSION,
+            factory_cost: rules::FACTORY_COST,
         }
     }
 }
@@ -166,15 +167,15 @@ pub fn new_commands() -> (Commands, Controls) {
 struct Args {
     #[arg(default_value_t = 8080)]
     port: u16,
-    #[arg(long, default_value_t = protocol::TERRAIN_SCALE)]
+    #[arg(long, default_value_t = rules::TERRAIN_SCALE)]
     terrain_scale: f32,
-    #[arg(long, default_value_t = protocol::MINERAL_THRESHOLD)]
+    #[arg(long, default_value_t = rules::MINERAL_THRESHOLD)]
     mineral_threshold: f32,
-    #[arg(long, default_value_t = protocol::TICK_DURATION)]
+    #[arg(long, default_value_t = rules::TICK_DURATION)]
     tick_duration: f32,
-    #[arg(long, default_value_t = protocol::STARTING_MINERALS)]
+    #[arg(long, default_value_t = rules::STARTING_MINERALS)]
     starting_minerals: u32,
-    #[arg(long, default_value_t = protocol::TERRAIN_SEED)]
+    #[arg(long, default_value_t = rules::TERRAIN_SEED)]
     terrain_seed: u32,
 }
 
@@ -228,11 +229,11 @@ mod tests {
     use futures::SinkExt;
     use futures::StreamExt;
     use protocol::Action;
+    use protocol::ClientMessage;
     use protocol::Kind;
     use protocol::Response;
     use protocol::ServerMessage;
     use protocol::State;
-    use protocol::{AuthenticationRequest, AuthenticationResponse, ClientMessage};
     use std::net::SocketAddr;
     use std::sync::Arc;
     use std::time::Duration;
@@ -323,30 +324,26 @@ mod tests {
 
         pub async fn authenticate(
             &mut self,
-            player_name: &'static str,
-        ) -> Result<AuthenticationResponse> {
+            nickname: &'static str,
+        ) -> Result<(bool, String, (i32, i32))> {
             info!(sender = "Client", "Authenticating");
             self.stream
-                .send(Message::Binary(
-                    bson::serialize_to_vec(&ClientMessage::AuthenticationRequest(
-                        AuthenticationRequest {
-                            player_name: player_name.to_string(),
-                        },
-                    ))
-                    .unwrap()
-                    .into(),
-                ))
+                .send(Message::Text(protocol::serialize(
+                    ClientMessage::AuthenticationRequest {
+                        nickname: nickname.to_string(),
+                    },
+                )))
                 .await
                 .map_err(|err| Error::ClientSendError(err))?;
             if let Some(maybe_binary) = self.stream.next().await {
-                if let std::result::Result::Ok(Message::Binary(auth_resp_text)) = maybe_binary {
+                if let std::result::Result::Ok(Message::Text(auth_resp_text)) = maybe_binary {
                     if let std::result::Result::Ok(response) =
                         bson::deserialize_from_slice::<ServerMessage>(
                             auth_resp_text.iter().as_slice(),
                         )
                     {
                         match response {
-                            ServerMessage::Response(Response::AuthenticationResponse(response)) => {
+                            ServerMessage::Response(Response::Authentication(response)) => {
                                 self.spawn_point = response.spawn_point;
                                 return Ok(response);
                             }
@@ -372,7 +369,7 @@ mod tests {
         pub async fn send_action(&mut self, action: Action) -> Result<()> {
             info!(sender = "Client", "Sending action");
             self.stream
-                .send(Message::Binary(
+                .send(Message::Text(
                     bson::serialize_to_vec(&action).unwrap().into(),
                 ))
                 .await
@@ -393,7 +390,7 @@ mod tests {
             let message = maybe_maybe_message
                 .unwrap()
                 .map_err(|err| Error::RecvError(err))?;
-            if let Message::Binary(text) = message {
+            if let Message::Text(text) = message {
                 let server_message =
                     bson::deserialize_from_slice::<ServerMessage>(text.iter().as_slice())
                         .map_err(|_| Error::ClientReadError)?;
