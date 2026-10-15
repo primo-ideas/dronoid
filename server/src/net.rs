@@ -1,7 +1,4 @@
-use crate::Error;
-use crate::database::{self, Database};
-use crate::player::EnteringPlayer;
-use crate::protocol::{Action, ClientMessage, Response, ServerMessage, is_name_valid};
+use anyhow::*;
 use crossbeam_channel::TryRecvError::{Disconnected, Empty};
 use crossbeam_channel::{Receiver, Sender};
 use futures::{SinkExt, StreamExt};
@@ -14,11 +11,14 @@ use tokio::net::TcpStream;
 use tokio::sync::Mutex;
 use tokio::time;
 use tokio_tungstenite::MaybeTlsStream;
-use tokio_tungstenite::tungstenite::Bytes;
 use tokio_tungstenite::{WebSocketStream, tungstenite::Message};
 use tracing::{debug, info, trace};
 use tungstenite::handshake::server::{ErrorResponse, Request};
 use tungstenite::http::StatusCode;
+
+use crate::database::{self, Database};
+use crate::player::EnteringPlayer;
+use crate::protocol::{self, Action, Response, ServerMessage, is_name_valid};
 
 pub async fn run_transport(
     database: Arc<Mutex<Database>>,
@@ -45,7 +45,7 @@ pub async fn run_transport(
                     break;
                 }
             }
-            Ok((tcp_stream, addr)) = tcp_listener.accept() => {
+            anyhow::Result::Ok((tcp_stream, addr)) = tcp_listener.accept() => {
                 debug!(sender = addr.to_string(), "New TCP connection");
                 let new_player_tx_cln = client_tx.clone();
                 let database_ref = database.clone();
@@ -56,7 +56,7 @@ pub async fn run_transport(
                         MaybeTlsStream::Plain(tcp_stream),
                         |req: &Request, resp: tungstenite::handshake::server::Response| {
                             if req.uri().path() == "/dronoid/ws" {
-                                Ok(resp)
+                                std::result::Result::Ok(resp)
                             } else {
                                 let mut err = ErrorResponse::new(Some("Not found".into()));
                                 *err.status_mut() = StatusCode::NOT_FOUND;
@@ -85,7 +85,7 @@ pub async fn run_transport(
                         Err(err) => {
                             info!(sender = addr.to_string(), "Played '{player_name}' kicked: {err}");
                         }
-                        Ok(_) => {
+                        anyhow::Result::Ok(_) => {
                             info!(sender = addr.to_string(), "Player '{player_name}' left");
                         }
                     }
@@ -101,25 +101,22 @@ pub async fn serve_client(
     new_player_tx: Sender<crate::player::EnteringPlayer>,
     database_ref: Arc<Mutex<Database>>,
     players_ref: Arc<Mutex<HashMap<String, ()>>>,
-) -> (Option<String>, crate::Result<()>) {
+) -> (Option<String>, anyhow::Result<()>) {
     let (action_sender, action_receiver) = crossbeam_channel::bounded::<Action>(100);
     let (state_sender, state_receiver) = crossbeam_channel::bounded::<ServerMessage>(100);
     let player_name: String;
-    if let Some(Ok(Message::Text(binary))) = websocket.next().await {
+    if let Some(anyhow::Result::Ok(Message::Text(binary))) = websocket.next().await {
         debug!(sender = addr.to_string(), "Authentication request received");
-        let maybe_authentication =
-            bson::deserialize_from_slice::<ClientMessage>(binary.iter().as_slice())
-                .map_err(Error::SerdeError);
+        let maybe_authentication = protocol::deserialize::<String>(binary);
         if maybe_authentication.is_err() {
-            return (None, Err(Error::UnknownError));
+            return (None, Err(anyhow!("")));
         }
         match maybe_authentication.unwrap() {
-            ClientMessage::AuthenticationRequest(request) => {
-                player_name = request.player_name;
-            }
-            _ => {
-                return (None, Err(Error::UnknownError));
-            }
+            request => {
+                player_name = request;
+            } // _ => {
+              //     return (None, Err(anyhow!("Error")));
+              // }
         }
 
         // let mut database_guard = database_ref.lock().await;
@@ -127,21 +124,23 @@ pub async fn serve_client(
         {
             (
                 None,
-                ServerMessage::Response(Response::Authentication(
-                    AuthenticationResponse::already_playing(),
-                )),
+                ServerMessage::Response(Response::Authentication {
+                    result: false,
+                    message: "Name taken".to_string(),
+                    spawn: (0, 0),
+                }),
             )
         } else {
             authentication(addr, player_name.clone(), &database_ref).await
         };
 
-        let response_text = bson::serialize_to_vec(&response).unwrap();
+        let response_text = protocol::serialize(response);
         if websocket
             .send(Message::Text(response_text.into()))
             .await
             .is_err()
         {
-            return (Some(player_name), Err(Error::UnknownError));
+            return (Some(player_name), Err(anyhow!("Error")));
         }
         if let Some(player_entry) = maybe_player_entry.clone() {
             if new_player_tx
@@ -155,14 +154,14 @@ pub async fn serve_client(
                 })
                 .is_err()
             {
-                return (Some(player_name), Err(Error::UnknownError));
+                return (Some(player_name), Err(anyhow!("Error")));
             }
             if maybe_player_entry.is_some() {}
         } else {
-            return (Some(player_name), Err(Error::UnknownError));
+            return (Some(player_name), Err(anyhow!("Error")));
         }
     } else {
-        return (None, Err(Error::UnknownError));
+        return (None, Err(anyhow!("Error")));
     }
 
     players_ref.lock().await.insert(player_name.clone(), ());
@@ -173,45 +172,47 @@ pub async fn serve_client(
             _ = interval.tick() => {
                 let result = loop {
                     match state_receiver.try_recv() {
-                        Ok(message) => {
-                            let binary = Bytes::from(bson::serialize_to_vec(&message).unwrap());
+                        anyhow::Result::Ok(message) => {
+                            let binary = protocol::serialize(message);
+                            // let binary = Bytes::from(bson::serialize_to_vec(&message).unwrap());
                             if websocket.send(Message::Text(binary)).await.is_err()  {
-                                break Err(Error::TransportError)
+                                break Err("Error::TransportError")
                             }
                         }
                         Err(Disconnected) => {
-                            break Err(Error::UnexpectedError("Recv from game loop disconnected !"))
+                            break Err("Recv from game loop disconnected !")
                         }
                         _ => {
-                            break Ok(())
+                            break anyhow::Result::Ok(())
                         }
                     }
                 };
                 if result.is_err() {
-                    return (Some(player_name), Err(result.err().unwrap()));
+                    return (Some(player_name), Err(anyhow!(result.err().unwrap())));
                 }
             }
 
             Some(maybe_msg) = websocket.next() => {
                 if maybe_msg.is_err() {
-                    return (Some(player_name), Err(Error::TransportError));
+                    return (Some(player_name), Err(anyhow!("Error::TransportError")));
                 }
                 let message = maybe_msg.unwrap();
                 if let Message::Text(bin) = message {
                     trace!(sender = addr.to_string(), "Received action");
-                    let maybe_action = bson::deserialize_from_slice::<Action>(bin.iter().as_slice());
+                    let maybe_action = protocol::deserialize::<Action>(bin);
+                    // let maybe_action = bson::deserialize_from_slice::<Action>(bin.iter().as_slice());
 
                     if maybe_action.is_err() {
-                        return (Some(player_name), Err(Error::NotAnAction));
+                        return (Some(player_name), Err(anyhow!("Error::NotAnAction")));
                     }
                     if action_sender.send(maybe_action.unwrap()).is_err() {
-                        return (Some(player_name), Err(Error::UnexpectedError("Could not send to game loop !")));
+                        return (Some(player_name), Err(anyhow!("Could not send to game loop !")));
                     }
                 } else if let Message::Close(_) = message {
                     return (Some(player_name), Ok(()))
                 }
                 else {
-                    return (Some(player_name), Err(Error::UnexpectedOrNoMessage));
+                    return (Some(player_name), Err(anyhow!("Error::UnexpectedOrNoMessage")));
                 }
             }
         }
@@ -228,21 +229,25 @@ async fn authentication(
         let spawn_point = player_entry.spawn_point;
         (
             Some(player_entry),
-            ServerMessage::Response(Response::Authentication(AuthenticationResponse::welcome(
-                spawn_point,
-            ))),
+            ServerMessage::Response(Response::Authentication {
+                result: true,
+                message: "Welcome".to_string(),
+                spawn: spawn_point,
+            }),
         )
     } else {
         if !is_name_valid(&player_name) {
             (
                 None,
-                ServerMessage::Response(Response::Authentication(
-                    AuthenticationResponse::invalid_name(),
-                )),
+                ServerMessage::Response(Response::Authentication {
+                    result: false,
+                    message: "Invalid name".to_string(),
+                    spawn: (0, 0),
+                }),
             )
         } else {
-            let spawn_x = rand::random_range(-10000_f32..10000_f32);
-            let spawn_y = rand::random_range(-10000_f32..10000_f32);
+            let spawn_x = rand::random_range(-10000..10000);
+            let spawn_y = rand::random_range(-10000..10000);
             let spawn_point = (spawn_x, spawn_y);
             info!(
                 sender = addr.to_string(),
@@ -251,9 +256,11 @@ async fn authentication(
             let player_entry = database.add_player_entry(player_name, spawn_point);
             (
                 Some(player_entry),
-                ServerMessage::Response(Response::Authentication(AuthenticationResponse::welcome(
-                    spawn_point,
-                ))),
+                ServerMessage::Response(Response::Authentication {
+                    result: true,
+                    message: "Welcome".to_string(),
+                    spawn: (0, 0),
+                }),
             )
         }
     }

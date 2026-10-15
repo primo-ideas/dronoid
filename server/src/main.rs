@@ -3,15 +3,12 @@
 use clap::Parser;
 use crossbeam_channel::TryRecvError::Disconnected;
 use crossbeam_channel::{Receiver, Sender};
-use std::io;
 use std::net::SocketAddr;
 use std::str::FromStr;
 use std::sync::Arc;
-use thiserror::Error;
 use tokio::net::TcpListener;
 use tokio::signal;
 use tokio::sync::Mutex;
-use tokio_tungstenite::tungstenite;
 
 use crate::database::Database;
 use crate::game::run_game;
@@ -115,10 +112,8 @@ pub struct Commands {
 }
 
 impl Commands {
-    pub fn stop(&self) -> Result<()> {
-        self.stopper
-            .send(Stop::Normal)
-            .map_err(Error::StopperError)?;
+    pub fn stop(&self) -> anyhow::Result<()> {
+        self.stopper.send(Stop::Normal)?;
         Ok(())
     }
 }
@@ -142,7 +137,7 @@ pub async fn run(
     database: Arc<Mutex<Database>>,
     tcp_listener: TcpListener,
     controls: Controls,
-) -> Result<()> {
+) -> anyhow::Result<()> {
     let (player_tx, player_rx) = crossbeam_channel::bounded::<EnteringPlayer>(1000);
     let (transport_stopper_tx, transport_stopper_rx) = crossbeam_channel::bounded::<()>(1);
     let transport_hdl = tokio::spawn(run_transport(
@@ -247,7 +242,6 @@ mod tests {
     use tracing::info;
     use tungstenite::Message;
 
-    use crate::Error;
     use crate::database;
     use crate::new_commands;
     use crate::protocol;
@@ -296,7 +290,7 @@ mod tests {
 
     pub struct Client {
         stream: WebSocketStream<MaybeTlsStream<TcpStream>>,
-        pub spawn_point: (f32, f32),
+        pub spawn_point: (i32, i32),
     }
 
     impl Client {
@@ -305,19 +299,18 @@ mod tests {
             let (stream, _) = tokio_tungstenite::connect_async(
                 format!("ws://{}:{}/dronoid/ws", addr.ip(), addr.port()).as_str(),
             )
-            .await
-            .map_err(|err| Error::ClientConnectError(err))?;
+            .await?;
             Ok(Self {
                 stream,
-                spawn_point: (0., 0.),
+                spawn_point: (0, 0),
             })
         }
 
         pub async fn authenticated(addr: SocketAddr, player_name: &'static str) -> Result<Self> {
             let mut client = Self::connect(addr).await?;
             let response = client.authenticate(player_name).await?;
-            if !response.result {
-                bail!(Error::ClientFailedAuthentication(response.text));
+            if !response.0 {
+                bail!(response.1);
             }
             Ok(client)
         }
@@ -333,19 +326,19 @@ mod tests {
                         nickname: nickname.to_string(),
                     },
                 )))
-                .await
-                .map_err(|err| Error::ClientSendError(err))?;
+                .await?;
             if let Some(maybe_binary) = self.stream.next().await {
                 if let std::result::Result::Ok(Message::Text(auth_resp_text)) = maybe_binary {
-                    if let std::result::Result::Ok(response) =
-                        bson::deserialize_from_slice::<ServerMessage>(
-                            auth_resp_text.iter().as_slice(),
-                        )
+                    if let std::result::Result::Ok(response) = protocol::deserialize(auth_resp_text)
                     {
                         match response {
-                            ServerMessage::Response(Response::Authentication(response)) => {
-                                self.spawn_point = response.spawn_point;
-                                return Ok(response);
+                            ServerMessage::Response(Response::Authentication {
+                                result,
+                                message,
+                                spawn,
+                            }) => {
+                                self.spawn_point = spawn;
+                                return Ok((result, message, spawn));
                             }
                             _ => {
                                 bail!("Test client: read: Not a response or not auth response");
@@ -369,11 +362,8 @@ mod tests {
         pub async fn send_action(&mut self, action: Action) -> Result<()> {
             info!(sender = "Client", "Sending action");
             self.stream
-                .send(Message::Text(
-                    bson::serialize_to_vec(&action).unwrap().into(),
-                ))
-                .await
-                .map_err(|err| Error::ClientSendError(err))?;
+                .send(Message::Text(protocol::serialize(action)))
+                .await?;
             Ok(())
         }
         #[allow(unused)]
@@ -385,18 +375,14 @@ mod tests {
         pub async fn next_message(&mut self) -> Result<ServerMessage> {
             let maybe_maybe_message = self.stream.next().await;
             if maybe_maybe_message.is_none() {
-                bail!(Error::ClientReadError);
+                bail!("Client read error");
             }
-            let message = maybe_maybe_message
-                .unwrap()
-                .map_err(|err| Error::RecvError(err))?;
+            let message = maybe_maybe_message.unwrap()?;
             if let Message::Text(text) = message {
-                let server_message =
-                    bson::deserialize_from_slice::<ServerMessage>(text.iter().as_slice())
-                        .map_err(|_| Error::ClientReadError)?;
+                let server_message = protocol::deserialize(text)?;
                 return Ok(server_message);
             } else {
-                bail!(Error::ClientReadError);
+                bail!("Client read error");
             }
         }
         #[allow(unused)]
@@ -459,10 +445,10 @@ mod tests {
         let ctx = TestContext::setup(default_rules()).await?;
         let mut client = Client::connect(ctx.server_addr).await?;
         let response = client.authenticate("Player").await?;
-        assert!(response.result);
-        assert_eq!("Welcome", response.text);
-        assert!(0. != response.spawn_point.0);
-        assert!(0. != response.spawn_point.1);
+        assert!(response.0);
+        assert_eq!("Welcome", response.1);
+        assert!(0 != response.2.0);
+        assert!(0 != response.2.1);
         ctx.teardown().await
     }
 
@@ -473,12 +459,12 @@ mod tests {
         let mut client2 = Client::connect(ctx.server_addr).await?;
         let response1 = client1.authenticate("Player1").await?;
         let response2 = client2.authenticate("Player2").await?;
-        assert!(response2.result);
-        assert_eq!("Welcome", response2.text);
-        assert!(0. != response2.spawn_point.0);
-        assert!(0. != response2.spawn_point.1);
-        assert!(response1.spawn_point.0 != response2.spawn_point.0);
-        assert!(response1.spawn_point.1 != response2.spawn_point.1);
+        assert!(response2.0);
+        assert_eq!("Welcome", response2.1);
+        assert!(0 != response2.2.0);
+        assert!(0 != response2.2.1);
+        assert!(response1.2.0 != response2.2.0);
+        assert!(response1.2.1 != response2.2.1);
         ctx.teardown().await
     }
 
@@ -489,9 +475,9 @@ mod tests {
         let mut client2 = Client::connect(ctx.server_addr).await?;
         let _ = client1.authenticate("Player").await?;
         let response = client2.authenticate("Player").await?;
-        assert!(!response.result);
-        assert_eq!("Already playing / name taken", response.text);
-        assert_eq!((0., 0.), response.spawn_point);
+        assert!(!response.0);
+        assert_eq!("Already playing / name taken", response.1);
+        assert_eq!((0, 0), response.2);
         ctx.teardown().await
     }
 
@@ -532,7 +518,7 @@ mod tests {
         let ctx = TestContext::setup(default_rules()).await?;
         let mut client = Client::authenticated(ctx.server_addr, "Player").await?;
         let mut place_position = client.spawn_point;
-        place_position.0 += 1000.;
+        place_position.0 += 1000;
         client
             .send_action(Action::PlaceFactory(place_position))
             .await?;
@@ -590,8 +576,8 @@ mod tests {
             .iter()
             .find(|x| x.kind == Kind::Spawn)
             .unwrap();
-        assert_eq!(entity.pos.0, client.spawn_point.0);
-        assert_eq!(entity.pos.1, client.spawn_point.1);
+        assert_eq!(entity.pos.0, client.spawn_point.0 as f32);
+        assert_eq!(entity.pos.1, client.spawn_point.1 as f32);
         assert_eq!(entity.kind, Kind::Spawn);
         ctx.teardown().await
     }
@@ -615,8 +601,8 @@ mod tests {
             .iter()
             .find(|x| x.kind == Kind::Spawn)
             .unwrap();
-        assert_eq!(entity.pos.0, client.spawn_point.0);
-        assert_eq!(entity.pos.1, client.spawn_point.1);
+        assert_eq!(entity.pos.0, client.spawn_point.0 as f32);
+        assert_eq!(entity.pos.1, client.spawn_point.1 as f32);
         assert!(
             10 < second_state.entities_in_zone.iter().fold(0, |a, x| {
                 if x.kind == Kind::Mineral { a + 1 } else { a }
@@ -639,8 +625,8 @@ mod tests {
             .iter()
             .find(|x| x.kind == Kind::Spawn)
             .unwrap();
-        assert_eq!(entity1.pos.0, client1.spawn_point.0);
-        assert_eq!(entity1.pos.1, client1.spawn_point.1);
+        assert_eq!(entity1.pos.0, client1.spawn_point.0 as f32);
+        assert_eq!(entity1.pos.1, client1.spawn_point.1 as f32);
 
         assert!(first_state2.entities_in_zone.len() > 0);
         let entity2 = first_state2
@@ -648,8 +634,8 @@ mod tests {
             .iter()
             .find(|x| x.kind == Kind::Spawn)
             .unwrap();
-        assert_eq!(entity2.pos.0, client2.spawn_point.0);
-        assert_eq!(entity2.pos.1, client2.spawn_point.1);
+        assert_eq!(entity2.pos.0, client2.spawn_point.0 as f32);
+        assert_eq!(entity2.pos.1, client2.spawn_point.1 as f32);
 
         ctx.teardown().await
     }
@@ -667,8 +653,8 @@ mod tests {
             let response = tokio::time::timeout(
                 Duration::from_secs_f32(1.),
                 client.action(Action::PlaceFactory((
-                    client.spawn_point.0 + rules.factory_extension * (angle.cos()),
-                    client.spawn_point.1 + rules.factory_extension * (angle.sin()),
+                    (client.spawn_point.0 as f32 + rules.factory_extension * (angle.cos())) as i32,
+                    (client.spawn_point.1 as f32 + rules.factory_extension * (angle.sin())) as i32,
                 ))),
             )
             .await??;
@@ -683,8 +669,12 @@ mod tests {
             let response = tokio::time::timeout(
                 Duration::from_secs_f32(1.),
                 client.action(Action::PlaceFactory((
-                    client.spawn_point.0 + (rules.factory_extension + f32::EPSILON) * (angle).cos(),
-                    client.spawn_point.1 + (rules.factory_extension + f32::EPSILON) * (angle).sin(),
+                    (client.spawn_point.0 as f32
+                        + (rules.factory_extension + f32::EPSILON) * (angle).cos())
+                        as i32,
+                    (client.spawn_point.1 as f32
+                        + (rules.factory_extension + f32::EPSILON) * (angle).sin())
+                        as i32,
                 ))),
             )
             .await??;

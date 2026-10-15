@@ -1,9 +1,8 @@
+use anyhow::*;
 use crossbeam_channel::{Receiver, Sender};
 use std::collections::HashMap;
 use std::net::SocketAddr;
 
-use crate::Error;
-use crate::Result;
 use crate::protocol::Action;
 use crate::protocol::ServerMessage;
 
@@ -34,11 +33,11 @@ impl OnlinePlayer {
             to_kick: false,
         }
     }
-    pub fn flush_messages(&mut self) -> Result<()> {
+    pub fn flush_messages(&mut self) -> anyhow::Result<()> {
         for message in self.messages.drain(0..) {
             self.message_sender
                 .send(message)
-                .map_err(|_| Error::FlushError)?;
+                .map_err(|_| anyhow!("Flush error"))?;
         }
         Ok(())
     }
@@ -49,6 +48,6 @@ pub struct EnteringPlayer {
     pub action_receiver: Receiver<Action>,
     pub id: u32,
     pub name: String,
-    pub spawn_point: (f32, f32),
+    pub spawn_point: (i32, i32),
     pub _addr: SocketAddr,
 }

@@ -6,7 +6,7 @@ use crate::helper::gen_id;
 pub struct PlayerEntry {
     pub(crate) id: u32,
     pub(crate) name: String,
-    pub(crate) spawn_point: (f32, f32),
+    pub(crate) spawn_point: (i32, i32),
 }
 
 pub struct Database {
@@ -69,7 +69,7 @@ impl Database {
         self.players.iter().find(|x| x.name == *name).cloned()
     }
 
-    pub fn add_player_entry(&mut self, name: String, spawn_point: (f32, f32)) -> PlayerEntry {
+    pub fn add_player_entry(&mut self, name: String, spawn_point: (i32, i32)) -> PlayerEntry {
         let player_entry = PlayerEntry {
             id: gen_id(),
             spawn_point,

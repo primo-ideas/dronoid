@@ -1,4 +1,4 @@
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use tungstenite::Utf8Bytes;
 
 // impl AuthenticationResponse {
@@ -37,7 +37,7 @@ pub struct FactoryControl {
 
 #[derive(Serialize, Deserialize)]
 pub enum Action {
-    PlaceFactory((f32, f32)),
+    PlaceFactory((i32, i32)),
     ControlFactory(FactoryControl),
 }
 
@@ -77,6 +77,7 @@ pub enum Response {
     },
 }
 
+#[allow(unused)]
 #[derive(Serialize, Deserialize)]
 pub enum ClientMessage {
     AuthenticationRequest { nickname: String },
@@ -100,11 +101,11 @@ where
     serde_json::to_string(&to_serialize).unwrap().into()
 }
 
-pub fn deserialize<'a, T>(to_deserialize: &'a Utf8Bytes) -> anyhow::Result<T>
+pub fn deserialize<T>(to_deserialize: Utf8Bytes) -> anyhow::Result<T>
 where
-    T: Deserialize<'a>,
+    T: DeserializeOwned,
 {
-    let str = to_deserialize.to_string();
-    let val = serde_json::from_str(str.as_str())?;
+    let str = to_deserialize.as_str();
+    let val = serde_json::from_str(str)?;
     Ok(val)
 }

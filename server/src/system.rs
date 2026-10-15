@@ -100,8 +100,8 @@ pub(crate) fn new_players(
         );
         let rigid_body = RigidBodyBuilder::fixed()
             .translation(rapier2d::math::Vector::new(
-                new_player.spawn_point.0,
-                new_player.spawn_point.1,
+                new_player.spawn_point.0 as f32,
+                new_player.spawn_point.1 as f32,
             ))
             .build();
         let rapier_hdl = rapier_bodies.0.insert(rigid_body);
@@ -211,7 +211,7 @@ pub(crate) fn actions(
                             player.minerals_cnt -= rules.0.factory_cost;
 
                             let rigid_body = RigidBodyBuilder::fixed()
-                                .translation(Vec2::new(pos_x, pos_y))
+                                .translation(Vec2::new(pos_x as f32, pos_y as f32))
                                 .build();
                             let rapier_hdl = rapier_bodies.0.insert(rigid_body);
                             let collider = ColliderBuilder::cuboid(10., 10.).build();
