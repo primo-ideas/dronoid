@@ -100,9 +100,11 @@ where
     serde_json::to_string(&to_serialize).unwrap().into()
 }
 
-pub fn deserialize<'a, T>(to_deserialize: Utf8Bytes) -> crate::Result<T>
+pub fn deserialize<'a, T>(to_deserialize: &'a Utf8Bytes) -> anyhow::Result<T>
 where
     T: Deserialize<'a>,
 {
-    Ok(serde_json::from_str(&to_deserialize.to_string())?)
+    let str = to_deserialize.to_string();
+    let val = serde_json::from_str(str.as_str())?;
+    Ok(val)
 }
