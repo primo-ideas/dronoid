@@ -1,0 +1,31 @@
+[gd_scene format=3 uid="uid://wya02ysbyx51"]
+
+[node name="Root" type="Node" unique_id=1746836841]
+
+[node name="UI" type="CenterContainer" parent="." unique_id=1449207486]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="PanelContainer" type="PanelContainer" parent="UI" unique_id=1264017271]
+layout_mode = 2
+
+[node name="Panel" type="Panel" parent="UI/PanelContainer" unique_id=794028291]
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="UI/PanelContainer" unique_id=419445188]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="UI/PanelContainer/HBoxContainer" unique_id=134495874]
+layout_mode = 2
+text = "Enter nickname"
+
+[node name="LineEdit" type="LineEdit" parent="UI/PanelContainer/HBoxContainer" unique_id=1999122022]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+
+[node name="Button" type="Button" parent="UI/PanelContainer/HBoxContainer" unique_id=146046704]
+layout_mode = 2
+text = "Connect"
