@@ -18,7 +18,7 @@ use tungstenite::http::StatusCode;
 
 use crate::database::{self, Database};
 use crate::player::EnteringPlayer;
-use crate::protocol::{self, Action, Response, ServerMessage, is_name_valid};
+use crate::protocol::{self, Action, ClientMessage, Response, ServerMessage, is_name_valid};
 
 pub async fn run_transport(
     database: Arc<Mutex<Database>>,
@@ -83,7 +83,7 @@ pub async fn run_transport(
                     };
                     match result {
                         Err(err) => {
-                            info!(sender = addr.to_string(), "Played '{player_name}' kicked: {err}");
+                            info!(sender = addr.to_string(), "Player '{player_name}' kicked: {err}");
                         }
                         anyhow::Result::Ok(_) => {
                             info!(sender = addr.to_string(), "Player '{player_name}' left");
@@ -107,16 +107,18 @@ pub async fn serve_client(
     let player_name: String;
     if let Some(anyhow::Result::Ok(Message::Text(binary))) = websocket.next().await {
         debug!(sender = addr.to_string(), "Authentication request received");
-        let maybe_authentication = protocol::deserialize::<String>(binary);
+        let maybe_authentication = protocol::deserialize::<ClientMessage>(binary);
         if maybe_authentication.is_err() {
-            return (None, Err(anyhow!("")));
+            return (None, Err(anyhow!("Deserialization error")));
         }
         match maybe_authentication.unwrap() {
-            request => {
-                player_name = request;
-            } // _ => {
-              //     return (None, Err(anyhow!("Error")));
-              // }
+            ClientMessage::AuthenticationRequest { nickname } => {
+                player_name = nickname;
+            } // request => {
+            //     player_name = request;
+            _ => {
+                return (None, Err(anyhow!("Error")));
+            }
         }
 
         // let mut database_guard = database_ref.lock().await;
@@ -259,7 +261,7 @@ async fn authentication(
                 ServerMessage::Response(Response::Authentication {
                     result: true,
                     message: "Welcome".to_string(),
-                    spawn: (0, 0),
+                    spawn: spawn_point,
                 }),
             )
         }

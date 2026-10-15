@@ -243,6 +243,7 @@ mod tests {
     use tungstenite::Message;
 
     use crate::database;
+    use crate::logger;
     use crate::new_commands;
     use crate::protocol;
     use crate::run;
@@ -258,6 +259,7 @@ mod tests {
 
     impl TestContext {
         pub async fn setup(rules: Rules) -> anyhow::Result<Self> {
+            logger::init();
             let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await?;
             let server_addr = listener.local_addr()?;
             let (commands, controls) = new_commands();
@@ -476,7 +478,7 @@ mod tests {
         let _ = client1.authenticate("Player").await?;
         let response = client2.authenticate("Player").await?;
         assert!(!response.0);
-        assert_eq!("Already playing / name taken", response.1);
+        assert_eq!("Name taken", response.1);
         assert_eq!((0, 0), response.2);
         ctx.teardown().await
     }
@@ -689,7 +691,7 @@ mod tests {
     }
 
     #[tokio::test(flavor = "multi_thread")]
-    async fn ping_01_twenty_messages() -> anyhow::Result<()> {
+    async fn ping_15_twenty_messages() -> anyhow::Result<()> {
         let ctx = TestContext::setup(default_rules()).await?;
         let mut client = Client::authenticated(ctx.server_addr, "Player1").await?;
         let mut now = Instant::now();
