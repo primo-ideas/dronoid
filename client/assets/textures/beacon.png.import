@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://d2xf4dhnjr58i"
-path="res://.godot/imported/spawn.png-26052cb7707979f0f2cf7eff3d6ab00d.ctex"
+uid="uid://bhijq5o3c5wmq"
+path="res://.godot/imported/beacon.png-05e39bd9782cb8578d2ff0cc81f0486a.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/textures/spawn.png"
-dest_files=["res://.godot/imported/spawn.png-26052cb7707979f0f2cf7eff3d6ab00d.ctex"]
+source_file="res://assets/textures/beacon.png"
+dest_files=["res://.godot/imported/beacon.png-05e39bd9782cb8578d2ff0cc81f0486a.ctex"]
 
 [params]
 

@@ -571,16 +571,16 @@ mod tests {
             first_state
                 .entities_in_zone
                 .iter()
-                .fold(0, |a, x| { if x.kind == Kind::Spawn { a + 1 } else { a } })
+                .fold(0, |a, x| { if x.kind == Kind::Beacon { a + 1 } else { a } })
         );
         let entity = first_state
             .entities_in_zone
             .iter()
-            .find(|x| x.kind == Kind::Spawn)
+            .find(|x| x.kind == Kind::Beacon)
             .unwrap();
         assert_eq!(entity.pos.0, client.spawn_point.0 as f32);
         assert_eq!(entity.pos.1, client.spawn_point.1 as f32);
-        assert_eq!(entity.kind, Kind::Spawn);
+        assert_eq!(entity.kind, Kind::Beacon);
         ctx.teardown().await
     }
 
@@ -596,12 +596,12 @@ mod tests {
             second_state
                 .entities_in_zone
                 .iter()
-                .fold(0, |a, x| { if x.kind == Kind::Spawn { a + 1 } else { a } })
+                .fold(0, |a, x| { if x.kind == Kind::Beacon { a + 1 } else { a } })
         );
         let entity = second_state
             .entities_in_zone
             .iter()
-            .find(|x| x.kind == Kind::Spawn)
+            .find(|x| x.kind == Kind::Beacon)
             .unwrap();
         assert_eq!(entity.pos.0, client.spawn_point.0 as f32);
         assert_eq!(entity.pos.1, client.spawn_point.1 as f32);
@@ -625,7 +625,7 @@ mod tests {
         let entity1 = first_state1
             .entities_in_zone
             .iter()
-            .find(|x| x.kind == Kind::Spawn)
+            .find(|x| x.kind == Kind::Beacon)
             .unwrap();
         assert_eq!(entity1.pos.0, client1.spawn_point.0 as f32);
         assert_eq!(entity1.pos.1, client1.spawn_point.1 as f32);
@@ -634,7 +634,7 @@ mod tests {
         let entity2 = first_state2
             .entities_in_zone
             .iter()
-            .find(|x| x.kind == Kind::Spawn)
+            .find(|x| x.kind == Kind::Beacon)
             .unwrap();
         assert_eq!(entity2.pos.0, client2.spawn_point.0 as f32);
         assert_eq!(entity2.pos.1, client2.spawn_point.1 as f32);

@@ -44,7 +44,7 @@ pub(crate) fn debug(entities: Query<&Kind>, mut timers: ResMut<Timers>) {
             helper::count_kind(&kinds, &protocol::Kind::Mineral),
             helper::count_kind(&kinds, &protocol::Kind::Factory),
             helper::count_kind(&kinds, &protocol::Kind::Dronoid),
-            helper::count_kind(&kinds, &protocol::Kind::Spawn),
+            helper::count_kind(&kinds, &protocol::Kind::Beacon),
         );
         timers.last_info = now;
     }
@@ -111,7 +111,7 @@ pub(crate) fn new_players(
             .insert_with_parent(collider, rapier_hdl, &mut rapier_bodies.0);
         commands.spawn((
             Beacon,
-            Kind(protocol::Kind::Spawn),
+            Kind(protocol::Kind::Beacon),
             Owned(new_player.id),
             ZoneExtension { radius: 100. },
             RapierObject { rapier_hdl },

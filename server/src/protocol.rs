@@ -1,28 +1,6 @@
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use tungstenite::Utf8Bytes;
 
-// impl AuthenticationResponse {
-//     pub fn new(result: bool, text: &'static str, spawn_point: (f32, f32)) -> Self {
-//         Self {
-//             result,
-//             text: text.to_string(),
-//             spawn_point,
-//         }
-//     }
-
-//     pub fn already_playing() -> Self {
-//         Self::new(false, "Already playing / name taken", (0., 0.))
-//     }
-
-//     pub fn invalid_name() -> Self {
-//         Self::new(false, "Invalid name", (0., 0.))
-//     }
-
-//     pub fn welcome(spawn_point: (f32, f32)) -> Self {
-//         Self::new(true, "Welcome", spawn_point)
-//     }
-// }
-
 #[derive(Serialize, Deserialize)]
 pub enum FactoryOrder {
     SetAutoSpawn(bool),
@@ -44,9 +22,9 @@ pub enum Action {
 #[derive(Serialize, Deserialize, Clone, PartialEq, Debug, Eq, Hash)]
 pub enum Kind {
     Mineral,
-    Factory,
-    Spawn,
     Dronoid,
+    Factory,
+    Beacon,
 }
 
 #[derive(Serialize, Deserialize)]
