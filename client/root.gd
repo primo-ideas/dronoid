@@ -3,7 +3,7 @@ extends Node
 var net: Node:
 	get: return $Net
 
-var ui: SubViewport:
+var ui: SubViewportContainer:
 	get: return $UI
 	
 var world: Node2D:
