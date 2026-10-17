@@ -62,22 +62,27 @@ func next_state_packet():
 			# existing_entity.position.z = voxel.pos_z
 		else:
 			var game_sprite = Sprite2D.new()
+			var size = 1
 			if entity.kind == "Mineral":
 				game_sprite.texture = mineral_texture
 			elif entity.kind == "Dronoid":
+				size = 3
 				game_sprite.texture = dronoid_texture
 			elif entity.kind == "Factory":
+				size = 6
 				game_sprite.texture = factory_texture
 			elif entity.kind == "Beacon":
+				size = 9
 				game_sprite.texture = beacon_texture
 			else:
 				printerr("Unknown kind")
-			game_sprite.scale /= game_sprite.texture.get_size()
 			var node = Node2D.new()
 
-			root.world.add_child(node)
-
 			node.add_child(game_sprite)
+
+			root.world.add_child(node)
+			game_sprite.scale = (Vector2.ONE / game_sprite.texture.get_size()) * size
+
 			node.position.x = entity.pos[0]
 			node.position.y = entity.pos[1]
 			node.name = "%s_%d" % [entity.kind, entity.id]
