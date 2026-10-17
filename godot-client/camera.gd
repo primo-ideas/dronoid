@@ -4,9 +4,13 @@ extends Camera2D
 
 const ZOOM_STEP := 1.1
 const ZOOM_MIN := 1.0
-const ZOOM_MAX := 7.5
+const ZOOM_MAX := 10
+const ZOOM_START := 7.
 
 var _dragging := false
+
+func _ready() -> void:
+	zoom = Vector2(ZOOM_START, ZOOM_START)
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:

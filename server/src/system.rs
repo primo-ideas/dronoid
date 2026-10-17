@@ -238,7 +238,7 @@ pub(crate) fn actions(
                         }
 
                         player.messages.push(protocol::ServerMessage::Response(
-                            protocol::Response::PlaceFactory { result: may_build },
+                            protocol::ResponseMessage::PlaceFactory { result: may_build },
                         ));
                     }
                     protocol::Action::ControlFactory(control) => {
@@ -323,8 +323,8 @@ pub(crate) fn sync(
     mut players: ResMut<Players>,
 ) {
     for (id, player) in &mut players.0 {
-        let mut state = protocol::State::default();
-        state.entities_in_zone = helper::get_entities_in_zone(
+        let mut state = protocol::StateMessage::default();
+        state.visible_minerals = helper::get_entities_in_zone(
             *id,
             entities.iter().collect(),
             &rapier_bodies.0,

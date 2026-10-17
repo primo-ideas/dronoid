@@ -221,14 +221,15 @@ async fn main() -> anyhow::Result<()> {
 mod tests {
     use anyhow::Result;
     use anyhow::bail;
+    use bevy_ecs::entity::Entity;
     use futures::SinkExt;
     use futures::StreamExt;
     use protocol::Action;
     use protocol::ClientMessage;
     use protocol::Kind;
-    use protocol::Response;
+    use protocol::ResponseMessage;
     use protocol::ServerMessage;
-    use protocol::State;
+    // use protocol::State;
     use std::net::SocketAddr;
     use std::sync::Arc;
     use std::time::Duration;
@@ -334,7 +335,7 @@ mod tests {
                     if let std::result::Result::Ok(response) = protocol::deserialize(auth_resp_text)
                     {
                         match response {
-                            ServerMessage::Response(Response::Authentication {
+                            ServerMessage::Response(ResponseMessage::Authentication {
                                 result,
                                 message,
                                 spawn,
@@ -369,7 +370,7 @@ mod tests {
             Ok(())
         }
         #[allow(unused)]
-        pub async fn action(&mut self, action: Action) -> Result<Response> {
+        pub async fn action(&mut self, action: Action) -> Result<ResponseMessage> {
             self.send_action(action).await?;
             self.until_response().await
         }
@@ -388,10 +389,13 @@ mod tests {
             }
         }
         #[allow(unused)]
-        pub async fn until_response(&mut self) -> Result<Response> {
+        pub async fn until_response(&mut self) -> Result<ResponseMessage> {
             loop {
                 match self.next_message().await? {
-                    ServerMessage::State(_) => continue,
+                    ServerMessage::State {
+                        entities_in_zone,
+                        minerals_cnt,
+                    } => continue,
                     ServerMessage::Response(response) => {
                         return Ok(response);
                     }
@@ -399,11 +403,14 @@ mod tests {
             }
         }
         #[allow(unused)]
-        pub async fn until_state(&mut self) -> Result<State> {
+        pub async fn until_state(&mut self) -> Result<(Vec<protocol::Entity>, u32)> {
             loop {
                 match self.next_message().await? {
-                    ServerMessage::State(state) => {
-                        return Ok(state);
+                    ServerMessage::State {
+                        entities_in_zone,
+                        minerals_cnt,
+                    } => {
+                        return Ok((entities_in_zone, minerals_cnt));
                     }
                     ServerMessage::Response(_) => continue,
                 }
@@ -491,7 +498,7 @@ mod tests {
             .send_action(Action::PlaceFactory(client.spawn_point))
             .await?;
         let response = client.until_response().await?;
-        if let Response::PlaceFactory { result } = response {
+        if let ResponseMessage::PlaceFactory { result } = response {
             assert!(result);
         } else {
             bail!("Not a place factory response");
@@ -525,7 +532,7 @@ mod tests {
             .send_action(Action::PlaceFactory(place_position))
             .await?;
         let response = client.until_response().await?;
-        if let Response::PlaceFactory { result } = response {
+        if let ResponseMessage::PlaceFactory { result } = response {
             assert!(!result);
         } else {
             bail!("Not a place factory response");
@@ -547,12 +554,12 @@ mod tests {
             .await?;
         let response2 = client2.until_response().await?;
 
-        if let Response::PlaceFactory { result } = response1 {
+        if let ResponseMessage::PlaceFactory { result } = response1 {
             assert!(!result);
         } else {
             bail!("Not a place factory response");
         }
-        if let Response::PlaceFactory { result } = response2 {
+        if let ResponseMessage::PlaceFactory { result } = response2 {
             assert!(!result);
         } else {
             bail!("Not a place factory response");
@@ -565,7 +572,7 @@ mod tests {
         let ctx = TestContext::setup(default_rules()).await?;
         let mut client = Client::authenticated(ctx.server_addr, "Player").await?;
         let first_state = client.until_state().await?;
-        assert!(first_state.entities_in_zone.len() > 0);
+        assert!(first_state.0.len() > 0);
         assert_eq!(
             1,
             first_state
@@ -660,7 +667,7 @@ mod tests {
                 ))),
             )
             .await??;
-            if let Response::PlaceFactory { result } = response {
+            if let ResponseMessage::PlaceFactory { result } = response {
                 assert!(result);
             } else {
                 bail!("Not the expected PlaceFactory response");
@@ -680,7 +687,7 @@ mod tests {
                 ))),
             )
             .await??;
-            if let Response::PlaceFactory { result } = response {
+            if let ResponseMessage::PlaceFactory { result } = response {
                 assert!(!result);
             } else {
                 bail!("Not the expected PlaceFactory response");

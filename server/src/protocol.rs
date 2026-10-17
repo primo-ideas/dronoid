@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
+use serde_json::Value;
 use tungstenite::Utf8Bytes;
 
 #[derive(Serialize, Deserialize)]
@@ -35,13 +36,18 @@ pub struct Entity {
 }
 
 #[derive(Serialize, Deserialize, Default)]
-pub struct State {
-    pub entities_in_zone: Vec<Entity>,
+
+pub struct PlayerInfo {
     pub minerals_cnt: u32,
+}
+#[derive(Serialize, Deserialize, Default)]
+pub struct StateMessage {
+    pub visible_minerals: Vec<Entity>,
+    pub player_info: PlayerInfo,
 }
 
 #[derive(Serialize, Deserialize)]
-pub enum Response {
+pub enum ResponseMessage {
     Authentication {
         result: bool,
         message: String,
@@ -64,8 +70,10 @@ pub enum ClientMessage {
 
 #[derive(Serialize, Deserialize)]
 pub enum ServerMessage {
-    Response(Response),
-    State(State),
+    #[serde(flatten)]
+    Response(ResponseMessage),
+    #[serde(flatten)]
+    State(StateMessage),
 }
 
 pub fn is_name_valid(player_name: &str) -> bool {

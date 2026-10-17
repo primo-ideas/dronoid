@@ -18,7 +18,7 @@ use tungstenite::http::StatusCode;
 
 use crate::database::{self, Database};
 use crate::player::EnteringPlayer;
-use crate::protocol::{self, Action, ClientMessage, Response, ServerMessage, is_name_valid};
+use crate::protocol::{self, Action, ClientMessage, ResponseMessage, ServerMessage, is_name_valid};
 
 pub async fn run_transport(
     database: Arc<Mutex<Database>>,
@@ -126,7 +126,7 @@ pub async fn serve_client(
         {
             (
                 None,
-                ServerMessage::Response(Response::Authentication {
+                ServerMessage::Response(ResponseMessage::Authentication {
                     result: false,
                     message: "Name taken".to_string(),
                     spawn: (0, 0),
@@ -231,7 +231,7 @@ async fn authentication(
         let spawn_point = player_entry.spawn_point;
         (
             Some(player_entry),
-            ServerMessage::Response(Response::Authentication {
+            ServerMessage::Response(ResponseMessage::Authentication {
                 result: true,
                 message: "Welcome".to_string(),
                 spawn: spawn_point,
@@ -241,7 +241,7 @@ async fn authentication(
         if !is_name_valid(&player_name) {
             (
                 None,
-                ServerMessage::Response(Response::Authentication {
+                ServerMessage::Response(ResponseMessage::Authentication {
                     result: false,
                     message: "Invalid name".to_string(),
                     spawn: (0, 0),
@@ -258,7 +258,7 @@ async fn authentication(
             let player_entry = database.add_player_entry(player_name, spawn_point);
             (
                 Some(player_entry),
-                ServerMessage::Response(Response::Authentication {
+                ServerMessage::Response(ResponseMessage::Authentication {
                     result: true,
                     message: "Welcome".to_string(),
                     spawn: spawn_point,
