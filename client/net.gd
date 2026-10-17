@@ -65,18 +65,19 @@ func next_state_packet():
 			if entity.kind == "Mineral":
 				game_sprite.texture = mineral_texture
 			elif entity.kind == "Dronoid":
-				game_sprite.texure = dronoid_texture
+				game_sprite.texture = dronoid_texture
 			elif entity.kind == "Factory":
 				game_sprite.texture = factory_texture
 			elif entity.kind == "Beacon":
 				game_sprite.texture = beacon_texture
 			else:
 				printerr("Unknown kind")
-
+			game_sprite.scale /= game_sprite.texture.get_size()
 			var node = Node2D.new()
 
 			root.world.add_child(node)
 
+			node.add_child(game_sprite)
 			node.position.x = entity.pos[0]
 			node.position.y = entity.pos[1]
 			node.name = "%s_%d" % [entity.kind, entity.id]

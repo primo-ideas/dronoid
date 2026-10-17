@@ -13,6 +13,7 @@ config_version=5
 config/name="Dronoid"
 run/main_scene="uid://wya02ysbyx51"
 config/features=PackedStringArray("4.7", "Forward Plus")
+boot_splash/bg_color=Color(0, 0, 0, 1)
 config/icon="res://icon.svg"
 
 [display]
@@ -35,3 +36,4 @@ theme/custom="uid://5e13js2am1yy"
 [rendering]
 
 rendering_device/driver.windows="d3d12"
+environment/defaults/default_clear_color=Color(0, 0, 0, 1)

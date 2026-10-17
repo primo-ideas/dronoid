@@ -1,7 +1,25 @@
 [gd_resource type="Theme" format=3 uid="uid://5e13js2am1yy"]
 
+[ext_resource type="StyleBox" uid="uid://c4302y8emhiqo" path="res://new_style_box_flat.tres" id="1_e1x85"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1bvp3"]
+content_margin_left = 16.0
+content_margin_top = 8.0
+content_margin_right = 16.0
+content_margin_bottom = 8.0
+bg_color = Color(0, 0, 0, 1)
+border_width_left = 6
+border_width_top = 6
+border_width_right = 6
+border_width_bottom = 6
+border_color = Color(0.3254902, 0.8039216, 0.85882354, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+corner_detail = 20
+
 [resource]
-MarginContainer/constants/margin_bottom = 15
-MarginContainer/constants/margin_left = 15
-MarginContainer/constants/margin_right = 15
-MarginContainer/constants/margin_top = 15
+Button/styles/normal = ExtResource("1_e1x85")
+LineEdit/styles/normal = ExtResource("1_e1x85")
+PanelContainer/styles/panel = SubResource("StyleBoxFlat_1bvp3")
