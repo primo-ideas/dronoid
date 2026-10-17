@@ -221,7 +221,6 @@ async fn main() -> anyhow::Result<()> {
 mod tests {
     use anyhow::Result;
     use anyhow::bail;
-    use bevy_ecs::entity::Entity;
     use futures::SinkExt;
     use futures::StreamExt;
     use protocol::Action;
@@ -247,6 +246,7 @@ mod tests {
     use crate::logger;
     use crate::new_commands;
     use crate::protocol;
+    use crate::protocol::StateMessage;
     use crate::run;
     use crate::{Commands, Rules};
 
@@ -392,10 +392,7 @@ mod tests {
         pub async fn until_response(&mut self) -> Result<ResponseMessage> {
             loop {
                 match self.next_message().await? {
-                    ServerMessage::State {
-                        entities_in_zone,
-                        minerals_cnt,
-                    } => continue,
+                    ServerMessage::State(_) => continue,
                     ServerMessage::Response(response) => {
                         return Ok(response);
                     }
@@ -403,14 +400,11 @@ mod tests {
             }
         }
         #[allow(unused)]
-        pub async fn until_state(&mut self) -> Result<(Vec<protocol::Entity>, u32)> {
+        pub async fn until_state(&mut self) -> Result<StateMessage> {
             loop {
                 match self.next_message().await? {
-                    ServerMessage::State {
-                        entities_in_zone,
-                        minerals_cnt,
-                    } => {
-                        return Ok((entities_in_zone, minerals_cnt));
+                    ServerMessage::State(state) => {
+                        return Ok(state);
                     }
                     ServerMessage::Response(_) => continue,
                 }
@@ -572,16 +566,16 @@ mod tests {
         let ctx = TestContext::setup(default_rules()).await?;
         let mut client = Client::authenticated(ctx.server_addr, "Player").await?;
         let first_state = client.until_state().await?;
-        assert!(first_state.0.len() > 0);
+        assert!(first_state.visible_minerals.len() > 0);
         assert_eq!(
             1,
             first_state
-                .entities_in_zone
+                .visible_minerals
                 .iter()
                 .fold(0, |a, x| { if x.kind == Kind::Beacon { a + 1 } else { a } })
         );
         let entity = first_state
-            .entities_in_zone
+            .visible_minerals
             .iter()
             .find(|x| x.kind == Kind::Beacon)
             .unwrap();
@@ -597,23 +591,23 @@ mod tests {
         let mut client = Client::authenticated(ctx.server_addr, "Player").await?;
         client.until_state().await?;
         let second_state = client.until_state().await?;
-        assert!(second_state.entities_in_zone.len() > 0);
+        assert!(second_state.visible_minerals.len() > 0);
         assert_eq!(
             1,
             second_state
-                .entities_in_zone
+                .visible_minerals
                 .iter()
                 .fold(0, |a, x| { if x.kind == Kind::Beacon { a + 1 } else { a } })
         );
         let entity = second_state
-            .entities_in_zone
+            .visible_minerals
             .iter()
             .find(|x| x.kind == Kind::Beacon)
             .unwrap();
         assert_eq!(entity.pos.0, client.spawn_point.0 as f32);
         assert_eq!(entity.pos.1, client.spawn_point.1 as f32);
         assert!(
-            10 < second_state.entities_in_zone.iter().fold(0, |a, x| {
+            10 < second_state.visible_minerals.iter().fold(0, |a, x| {
                 if x.kind == Kind::Mineral { a + 1 } else { a }
             })
         );
@@ -628,18 +622,18 @@ mod tests {
         let first_state1 = client1.until_state().await?;
         let first_state2 = client2.until_state().await?;
 
-        assert!(first_state1.entities_in_zone.len() > 0);
+        assert!(first_state1.visible_minerals.len() > 0);
         let entity1 = first_state1
-            .entities_in_zone
+            .visible_minerals
             .iter()
             .find(|x| x.kind == Kind::Beacon)
             .unwrap();
         assert_eq!(entity1.pos.0, client1.spawn_point.0 as f32);
         assert_eq!(entity1.pos.1, client1.spawn_point.1 as f32);
 
-        assert!(first_state2.entities_in_zone.len() > 0);
+        assert!(first_state2.visible_minerals.len() > 0);
         let entity2 = first_state2
-            .entities_in_zone
+            .visible_minerals
             .iter()
             .find(|x| x.kind == Kind::Beacon)
             .unwrap();

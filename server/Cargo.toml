@@ -44,3 +44,4 @@ tracing-subscriber = { version = "0.3.23", features = [
 tungstenite = "0.30.0"
 rusqlite = { version = "0.40.2", features = ["bundled"] }
 tempfile = "3.27.0"
+serde_json = "1.0.154"

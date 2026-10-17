@@ -330,7 +330,7 @@ pub(crate) fn sync(
             &rapier_bodies.0,
             zone_extenders,
         );
-        state.minerals_cnt = player.minerals_cnt;
+        state.player_info.minerals_cnt = player.minerals_cnt;
         player.messages.push(protocol::ServerMessage::State(state));
     }
 }

@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
-use serde_json::Value;
 use tungstenite::Utf8Bytes;
 
 #[derive(Serialize, Deserialize)]
@@ -69,10 +68,10 @@ pub enum ClientMessage {
 }
 
 #[derive(Serialize, Deserialize)]
+#[serde(untagged)]
 pub enum ServerMessage {
-    #[serde(flatten)]
     Response(ResponseMessage),
-    #[serde(flatten)]
+
     State(StateMessage),
 }
 
