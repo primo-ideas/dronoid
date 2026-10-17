@@ -28,5 +28,6 @@ mono_crash.*.json
 
 /target
 /server/target
+/term-client/target
 
 *.db
