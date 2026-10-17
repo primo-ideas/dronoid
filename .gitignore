@@ -26,8 +26,7 @@ mono_crash.*.json
 # Uncomment if your project does not version PCK files as runtime dependencies.
 # *.pck
 
-/target
-/server/target
-/term-client/target
+/*/target
+
 
 *.db
