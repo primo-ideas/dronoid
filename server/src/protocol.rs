@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use tungstenite::Utf8Bytes;
 
 #[derive(Serialize, Deserialize)]
+#[serde(untagged)]
 pub enum FactoryOrder {
     SetAutoSpawn(bool),
     ManualSpawn,
@@ -14,6 +15,7 @@ pub struct FactoryControl {
 }
 
 #[derive(Serialize, Deserialize)]
+#[serde(untagged)]
 pub enum Action {
     PlaceFactory((i32, i32)),
     ControlFactory(FactoryControl),
@@ -46,6 +48,7 @@ pub struct StateMessage {
 }
 
 #[derive(Serialize, Deserialize)]
+#[serde(untagged)]
 pub enum ResponseMessage {
     Authentication {
         result: bool,
@@ -62,6 +65,7 @@ pub enum ResponseMessage {
 
 #[allow(unused)]
 #[derive(Serialize, Deserialize)]
+#[serde(untagged)]
 pub enum ClientMessage {
     AuthenticationRequest { nickname: String },
     Action(Action),

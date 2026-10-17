@@ -49,10 +49,10 @@ func next_state_packet():
 		return
 	var packet_text = packet.get_string_from_utf8()
 	var server_message = JSON.parse_string(packet_text)
-	var game_state = server_message["State"]
-	var entities_in_zone: Array = game_state["entities_in_zone"]
+	var game_state = server_message
+	var entities_in_zone: Array = game_state["visible_minerals"]
 
-	var _self_player = game_state["minerals_cnt"]
+	var _self_player = game_state["player_info"]["minerals_cnt"]
 
 	for entity in entities_in_zone:
 		if entities.has(entity.id):
@@ -91,9 +91,9 @@ func next_state_packet():
 func handle_net():
 	if state == NetState.AUTHENTICATION_SENDING_REQUEST:
 		ui.info_label.text = "Authenticating"
-		socket.send_text(JSON.stringify({
-			"AuthenticationRequest": {"nickname": self.player_nickname}
-		}))
+		socket.send_text(JSON.stringify(
+			{"nickname": self.player_nickname}
+		))
 		state = NetState.AUTHENTICATION_WAITING_RESPONSE
 	elif state == NetState.AUTHENTICATION_WAITING_RESPONSE:
 		if socket.get_available_packet_count() == 0:
@@ -106,13 +106,13 @@ func handle_net():
 		var packet_text = packet.get_string_from_utf8()
 		print(packet_text)
 		var auth_response = JSON.parse_string(packet_text)
-		var auth_info = auth_response["Response"]["Authentication"]
-		if auth_info["result"] == false:
+		print(auth_response)
+		if auth_response["result"] == false:
 			ui.info_label.text = "Server declined authentication: %s" % [auth_response["message"]]
 			socket.close()
 			return
 		ui.info_label.text = ""
-		root.camera.position = Vector2(auth_info.spawn[0], auth_info.spawn[1])
+		root.camera.position = Vector2(auth_response.spawn[0], auth_response.spawn[1])
 		state = NetState.PLAYING
 	elif state == NetState.PLAYING:
 		while socket.get_available_packet_count() > 0:
