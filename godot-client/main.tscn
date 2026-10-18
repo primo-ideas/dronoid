@@ -103,4 +103,25 @@ text = "Player"
 layout_mode = 2
 text = "Connect"
 
+[node name="PanelContainer" type="PanelContainer" parent="UI/UI" unique_id=678401085]
+visible = false
+custom_minimum_size = Vector2(100, 350)
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -192.0
+offset_top = 44.29
+offset_right = -42.00049
+offset_bottom = 444.29
+grow_horizontal = 0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="UI/UI/PanelContainer" unique_id=1950232795]
+layout_mode = 2
+
+[node name="SpawnFactoryButton" type="Button" parent="UI/UI/PanelContainer/VBoxContainer" unique_id=1866703392]
+layout_mode = 2
+text = "Spawn Factory"
+
 [connection signal="pressed" from="UI/UI/CenterContainer/ConnectPanel/HBoxContainer/ConnectButton" to="UI/UI" method="_on_connect_button_pressed"]
+[connection signal="pressed" from="UI/UI/PanelContainer/VBoxContainer/SpawnFactoryButton" to="UI/UI" method="_on_spawn_factory_button_pressed"]

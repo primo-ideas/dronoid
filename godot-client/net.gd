@@ -114,6 +114,7 @@ func handle_net():
 		ui.info_label.text = ""
 		root.camera.position = Vector2(auth_response.spawn[0], auth_response.spawn[1])
 		state = NetState.PLAYING
+		ui.game_panel.visible = true
 	elif state == NetState.PLAYING:
 		while socket.get_available_packet_count() > 0:
 			next_state_packet()
