@@ -17,7 +17,7 @@ var building_node: Node2D = null
 func _process(_delta):
 	debug_label.text = "(%d,%d)" % [root.camera.position.x, root.camera.position.y]
 	if spawning_building:
-		building_node.position = root.camera.position + get_global_mouse_position()
+		building_node.position = root.camera.global_position + get_global_mouse_position()
 
 func _on_connect_button_pressed() -> void:
 	net.connect_to_server(nickname_line_edit.text)
