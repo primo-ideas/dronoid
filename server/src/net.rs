@@ -178,7 +178,7 @@ pub async fn serve_client(
                             let binary = protocol::serialize(message);
                             // let binary = Bytes::from(bson::serialize_to_vec(&message).unwrap());
                             if websocket.send(Message::Text(binary)).await.is_err()  {
-                                break Err("Error::TransportError")
+                                break Err("Could not send data to client")
                             }
                         }
                         Err(Disconnected) => {
@@ -196,7 +196,7 @@ pub async fn serve_client(
 
             Some(maybe_msg) = websocket.next() => {
                 if maybe_msg.is_err() {
-                    return (Some(player_name), Err(anyhow!("Error::TransportError")));
+                    return (Some(player_name), Err(anyhow!("Websocket read error")));
                 }
                 let message = maybe_msg.unwrap();
                 if let Message::Text(bin) = message {

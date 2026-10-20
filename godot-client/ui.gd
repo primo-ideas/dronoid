@@ -11,27 +11,33 @@ extends Control
 
 @onready var factory_texture = root.net.factory_texture
 
-var spawning_building = false
+var placing_building = false
 var building_node: Node2D = null
 
 func _process(_delta):
 	debug_label.text = "(%d,%d)" % [root.camera.position.x, root.camera.position.y]
-	if spawning_building:
-		building_node.position = root.camera.global_position + get_global_mouse_position()
+	if placing_building:
+		building_node.position = root.world.get_global_mouse_position()
+		if Input.is_action_just_pressed("place_building"):
+			net.send({"PlaceFactory": [root.world.get_global_mouse_position().x, root.world.get_global_mouse_position().y]})
 
 func _on_connect_button_pressed() -> void:
 	net.connect_to_server(nickname_line_edit.text)
 
 func _on_spawn_factory_button_pressed() -> void:
-	if !spawning_building:
-		building_node = Sprite2D.new()
-		building_node.texture = factory_texture
-		root.world.add_child(building_node)
-		spawning_building = true
+	if !placing_building:
+		enter_placing_mode()
 	else:
 		leave_placing_mode()
 		
+func enter_placing_mode():
+	building_node = Sprite2D.new()
+	building_node.texture = factory_texture
+	building_node.scale = Vector2.ONE / factory_texture.get_size() * 6
+	root.world.add_child(building_node)
+	placing_building = true
+
 func leave_placing_mode():
 	root.world.remove_child(building_node)
 	building_node.queue_free()
-	spawning_building = false
+	placing_building = false

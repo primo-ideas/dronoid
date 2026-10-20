@@ -22,6 +22,9 @@ var entities = {}
 func _ready() -> void:
 	set_process(false)
 
+func send(message: Variant):
+	socket.send_text(JSON.stringify(message))
+
 func connect_to_server(nickname: String):
 	if is_processing():
 		return
@@ -130,3 +133,5 @@ func _process(_delta):
 		var code = socket.get_close_code()
 		ui.info_label.text = "WebSocket closed with code: %d" % [code]
 		set_process(false)
+		ui.title.visible = false
+		ui.connect_panel.visible = false
