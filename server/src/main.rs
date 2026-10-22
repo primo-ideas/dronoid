@@ -27,44 +27,6 @@ mod resource;
 mod rules;
 mod system;
 
-// pub type Result<T> = std::result::Result<T, Error>;
-
-// #[derive(Error, Debug)]
-// pub enum Error {
-//     #[error("Network could not be initialized: {0}")]
-//     NetworkInitError(io::Error),
-//     #[error("Did not stop properly: {0}")]
-//     StopError(u8),
-//     #[error("Could not flush state to transport")]
-//     FlushError,
-//     #[error("Failed to join session: {0}")]
-//     WaitError(tokio::task::JoinError),
-//     #[error("No message received or it was of an unexpected type")]
-//     UnexpectedOrNoMessage,
-//     #[error("Client could not connect: {0}")]
-//     ClientConnectError(tungstenite::Error),
-//     #[error("Client could not authentication: {0}")]
-//     ClientFailedAuthentication(String),
-//     #[error("Client could not send data: {0}")]
-//     ClientSendError(tungstenite::Error),
-//     #[error("Client read error")]
-//     ClientReadError,
-//     #[error("Client could not receive data: {0}")]
-//     RecvError(tungstenite::Error),
-//     #[error("Stopper channel failed: {0}")]
-//     StopperError(crossbeam_channel::SendError<Stop>),
-//     #[error("Unexpected error: {0}")]
-//     UnexpectedError(&'static str),
-//     #[error("Transport error")]
-//     TransportError,
-//     #[error("Not an action")]
-//     NotAnAction,
-//     #[error("Unknown error")]
-//     UnknownError,
-//     #[error("serde failed: {0}")]
-//     SerdeError(serde_json::Error),
-// }
-
 #[derive(Clone, Debug)]
 pub struct ZoneExtensions {
     pub factory: f32,
@@ -228,12 +190,9 @@ mod tests {
     use protocol::Kind;
     use protocol::ResponseMessage;
     use protocol::ServerMessage;
-    // use protocol::State;
     use std::net::SocketAddr;
     use std::sync::Arc;
     use std::time::Duration;
-    // use tempfile::NamedTempFile;
-    // use tempfile::NamedTempFile;
     use tokio::io::AsyncWriteExt;
     use tokio::sync::Mutex;
     use tokio::time::Instant;
@@ -265,7 +224,6 @@ mod tests {
             let server_addr = listener.local_addr()?;
             let (commands, controls) = new_commands();
             let rules_cln = rules.clone();
-            // let tmp_db_path = NamedTempFile::new()?;
             let db = database::Database::from_path(None);
             let hdl = tokio::spawn(async move {
                 run(rules_cln, Arc::new(Mutex::new(db)), listener, controls).await?;
@@ -713,11 +671,11 @@ mod tests {
     }
 
     // #[test]
-    // fn persistence_01_add_get_player() -> anyhow::Result<()> {
+    // fn persistence_16_add_get_player() -> anyhow::Result<()> {
     //     let tmp_db_path = NamedTempFile::new()?;
     //     let db = database::Database::from_path(tmp_db_path.path().to_str().unwrap());
 
-    //     // db.add_player_entry(name, spawn_point)
+    //     db.add_player_entry(name, spawn_point)
     //     anyhow::Ok(())
     // }
 }

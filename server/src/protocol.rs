@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use tungstenite::Utf8Bytes;
 
 #[derive(Serialize, Deserialize)]
-#[serde(untagged)]
+#[serde(rename_all = "lowercase")]
 pub enum FactoryOrder {
     SetAutoSpawn(bool),
     ManualSpawn,
@@ -15,7 +15,7 @@ pub struct FactoryControl {
 }
 
 #[derive(Serialize, Deserialize)]
-#[serde(untagged)]
+#[serde(rename_all = "lowercase")]
 pub enum Action {
     PlaceFactory((i32, i32)),
     ControlFactory(FactoryControl),
@@ -37,10 +37,10 @@ pub struct Entity {
 }
 
 #[derive(Serialize, Deserialize, Default)]
-
 pub struct PlayerInfo {
     pub minerals_cnt: u32,
 }
+
 #[derive(Serialize, Deserialize, Default)]
 pub struct StateMessage {
     pub visible_minerals: Vec<Entity>,
@@ -48,7 +48,7 @@ pub struct StateMessage {
 }
 
 #[derive(Serialize, Deserialize)]
-#[serde(untagged)]
+#[serde(rename_all = "lowercase")]
 pub enum ResponseMessage {
     Authentication {
         result: bool,
@@ -65,17 +65,17 @@ pub enum ResponseMessage {
 
 #[allow(unused)]
 #[derive(Serialize, Deserialize)]
-#[serde(untagged)]
+#[serde(rename_all = "lowercase")]
 pub enum ClientMessage {
     AuthenticationRequest { nickname: String },
     Action(Action),
 }
 
 #[derive(Serialize, Deserialize)]
-#[serde(untagged)]
+#[serde(rename_all = "lowercase")]
+
 pub enum ServerMessage {
     Response(ResponseMessage),
-
     State(StateMessage),
 }
 

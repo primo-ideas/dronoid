@@ -26,8 +26,6 @@ pub async fn run_transport(
     transport_stopper_rx: Receiver<()>,
     client_tx: Sender<EnteringPlayer>,
 ) {
-    // let database_ref = Arc::new(Mutex::new(database));
-    // let database_ref = Arc::clone(&database);
     let players_ref = Arc::new(Mutex::new(HashMap::<String, ()>::default()));
     let mut interval = time::interval(Duration::from_secs_f32(1. / 100.));
     let local_addr = tcp_listener.local_addr().unwrap();
@@ -114,14 +112,13 @@ pub async fn serve_client(
         match maybe_authentication.unwrap() {
             ClientMessage::AuthenticationRequest { nickname } => {
                 player_name = nickname;
-            } // request => {
-            //     player_name = request;
+            }
+
             _ => {
                 return (None, Err(anyhow!("Error")));
             }
         }
 
-        // let mut database_guard = database_ref.lock().await;
         let (maybe_player_entry, response) = if players_ref.lock().await.contains_key(&player_name)
         {
             (
@@ -176,7 +173,7 @@ pub async fn serve_client(
                     match state_receiver.try_recv() {
                         anyhow::Result::Ok(message) => {
                             let binary = protocol::serialize(message);
-                            // let binary = Bytes::from(bson::serialize_to_vec(&message).unwrap());
+
                             if websocket.send(Message::Text(binary)).await.is_err()  {
                                 break Err("Could not send data to client")
                             }
@@ -202,10 +199,10 @@ pub async fn serve_client(
                 if let Message::Text(bin) = message {
                     trace!(sender = addr.to_string(), "Received action");
                     let maybe_action = protocol::deserialize::<Action>(bin);
-                    // let maybe_action = bson::deserialize_from_slice::<Action>(bin.iter().as_slice());
+
 
                     if maybe_action.is_err() {
-                        return (Some(player_name), Err(anyhow!("Error::NotAnAction")));
+                        return (Some(player_name), Err(anyhow!("Not an action")));
                     }
                     if action_sender.send(maybe_action.unwrap()).is_err() {
                         return (Some(player_name), Err(anyhow!("Could not send to game loop !")));

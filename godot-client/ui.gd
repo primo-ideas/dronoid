@@ -19,7 +19,7 @@ func _process(_delta):
 	if placing_building:
 		building_node.position = root.world.get_global_mouse_position()
 		if Input.is_action_just_pressed("place_building"):
-			net.send({"PlaceFactory": [root.world.get_global_mouse_position().x, root.world.get_global_mouse_position().y]})
+			net.send({"placefactory": [root.world.get_global_mouse_position().x as int, root.world.get_global_mouse_position().y as int]})
 
 func _on_connect_button_pressed() -> void:
 	net.connect_to_server(nickname_line_edit.text)
