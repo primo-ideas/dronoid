@@ -199,15 +199,24 @@ pub(crate) fn actions(
                 },
                 Ok(player_action) => match player_action {
                     protocol::Action::PlaceFactory((pos_x, pos_y)) => {
-                        let may_build = helper::is_in_player_zone(
+                        let mut message = "";
+                        let is_in_zone = helper::is_in_player_zone(
                             pos_x,
                             pos_y,
                             id,
                             zone_extenders.iter().collect(),
                             &rapier_bodies.0,
-                        ) && player.minerals_cnt >= rules.0.factory_cost;
+                        );
 
-                        if may_build {
+                        let enough_resouces = player.minerals_cnt >= rules.0.factory_cost;
+
+                        if !enough_resouces {
+                            message = "Not enough resources";
+                        } else if !is_in_zone {
+                            message = "Not in build zone";
+                        }
+
+                        if is_in_zone && enough_resouces {
                             player.minerals_cnt -= rules.0.factory_cost;
 
                             let rigid_body = RigidBodyBuilder::fixed()
@@ -238,7 +247,10 @@ pub(crate) fn actions(
                         }
 
                         player.messages.push(protocol::ServerMessage::Response(
-                            protocol::ResponseMessage::PlaceFactory { result: may_build },
+                            protocol::ResponseMessage::PlaceFactory {
+                                result: enough_resouces && is_in_zone,
+                                message: message.to_string(),
+                            },
                         ));
                     }
                     protocol::Action::ControlFactory(control) => {

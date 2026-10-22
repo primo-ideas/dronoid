@@ -450,7 +450,7 @@ mod tests {
             .send_action(Action::PlaceFactory(client.spawn_point))
             .await?;
         let response = client.until_response().await?;
-        if let ResponseMessage::PlaceFactory { result } = response {
+        if let ResponseMessage::PlaceFactory { result, message: _ } = response {
             assert!(result);
         } else {
             bail!("Not a place factory response");
@@ -484,7 +484,7 @@ mod tests {
             .send_action(Action::PlaceFactory(place_position))
             .await?;
         let response = client.until_response().await?;
-        if let ResponseMessage::PlaceFactory { result } = response {
+        if let ResponseMessage::PlaceFactory { result, message: _ } = response {
             assert!(!result);
         } else {
             bail!("Not a place factory response");
@@ -506,12 +506,12 @@ mod tests {
             .await?;
         let response2 = client2.until_response().await?;
 
-        if let ResponseMessage::PlaceFactory { result } = response1 {
+        if let ResponseMessage::PlaceFactory { result, message: _ } = response1 {
             assert!(!result);
         } else {
             bail!("Not a place factory response");
         }
-        if let ResponseMessage::PlaceFactory { result } = response2 {
+        if let ResponseMessage::PlaceFactory { result, message: _ } = response2 {
             assert!(!result);
         } else {
             bail!("Not a place factory response");
@@ -619,7 +619,7 @@ mod tests {
                 ))),
             )
             .await??;
-            if let ResponseMessage::PlaceFactory { result } = response {
+            if let ResponseMessage::PlaceFactory { result, message: _ } = response {
                 assert!(result);
             } else {
                 bail!("Not the expected PlaceFactory response");
@@ -639,7 +639,7 @@ mod tests {
                 ))),
             )
             .await??;
-            if let ResponseMessage::PlaceFactory { result } = response {
+            if let ResponseMessage::PlaceFactory { result, message: _ } = response {
                 assert!(!result);
             } else {
                 bail!("Not the expected PlaceFactory response");

@@ -57,6 +57,7 @@ pub enum ResponseMessage {
     },
     PlaceFactory {
         result: bool,
+        message: String,
     },
     ControlFactory {
         result: bool,

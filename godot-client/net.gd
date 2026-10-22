@@ -55,6 +55,8 @@ func next_play_packet():
 	if server_message.has("response"):
 		if server_message.response.has("placefactory"):
 			ui.leave_placing_mode()
+			if !server_message.response.placefactory.result:
+				ui.info_label.text = server_message.response.placefactory.message
 	elif server_message.has("state"):
 		var game_state = server_message
 		var entities_in_zone: Array = game_state.state.visible_minerals
