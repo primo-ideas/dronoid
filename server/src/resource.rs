@@ -3,53 +3,11 @@ use crossbeam_channel::Receiver;
 use crossbeam_channel::Sender;
 use noise::NoiseFn;
 use noise::Perlin;
-use rapier2d::dynamics::SoftBodySet;
-use rapier2d::{
-    dynamics::{
-        CCDSolver, ImpulseJointSet, IntegrationParameters, IslandManager, MultibodyJointSet,
-        RigidBodySet,
-    },
-    geometry::{ColliderSet, DefaultBroadPhase, NarrowPhase},
-    pipeline::PhysicsPipeline,
-};
 use std::collections::HashMap;
 use tokio::time::Instant;
 
 use crate::player::EnteringPlayer;
 use crate::player::OnlinePlayer;
-
-#[derive(Resource, Default)]
-pub(crate) struct RapierIntegrationParameters(pub(crate) IntegrationParameters);
-
-#[derive(Resource, Default)]
-pub(crate) struct RapierIslandManager(pub(crate) IslandManager);
-
-#[derive(Resource, Default)]
-pub(crate) struct RapierBroadPhase(pub(crate) DefaultBroadPhase);
-
-#[derive(Resource, Default)]
-pub(crate) struct RapierNarrowPhase(pub(crate) NarrowPhase);
-
-#[derive(Resource, Default)]
-pub(crate) struct RapierImpulseJointSet(pub(crate) ImpulseJointSet);
-
-#[derive(Resource, Default)]
-pub(crate) struct RapierMultibodyJointSet(pub(crate) MultibodyJointSet);
-
-#[derive(Resource, Default)]
-pub(crate) struct RapierCCDSolver(pub(crate) CCDSolver);
-
-#[derive(Resource, Default)]
-pub(crate) struct RapierBodies(pub(crate) RigidBodySet);
-
-#[derive(Resource, Default)]
-pub(crate) struct RapierColliders(pub(crate) ColliderSet);
-
-#[derive(Resource, Default)]
-pub(crate) struct RapierPipeline(pub(crate) PhysicsPipeline);
-
-#[derive(Resource, Default)]
-pub(crate) struct RapierSoftBodies(pub(crate) SoftBodySet);
 
 #[derive(Resource)]
 pub(crate) struct TransportStopper(pub(crate) Sender<()>);

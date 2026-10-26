@@ -21,6 +21,7 @@ mod game;
 mod helper;
 mod logger;
 mod net;
+mod physics;
 mod player;
 mod protocol;
 mod resource;

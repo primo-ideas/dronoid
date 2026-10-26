@@ -7,21 +7,33 @@ use tracing::info;
 
 use crate::Controls;
 use crate::Rules;
+use crate::physics;
+use crate::physics::RapierBodies;
+use crate::physics::RapierBroadPhase;
+use crate::physics::RapierCCDSolver;
+use crate::physics::RapierColliders;
+use crate::physics::RapierImpulseJointSet;
+use crate::physics::RapierIntegrationParameters;
+use crate::physics::RapierIslandManager;
+use crate::physics::RapierMultibodyJointSet;
+use crate::physics::RapierNarrowPhase;
+use crate::physics::RapierPipeline;
+use crate::physics::RapierSoftBodies;
 use crate::player::EnteringPlayer;
 use crate::resource::ControlsR;
 use crate::resource::NewPlayerReceiver;
 use crate::resource::Players;
-use crate::resource::RapierBodies;
-use crate::resource::RapierBroadPhase;
-use crate::resource::RapierCCDSolver;
-use crate::resource::RapierColliders;
-use crate::resource::RapierImpulseJointSet;
-use crate::resource::RapierIntegrationParameters;
-use crate::resource::RapierIslandManager;
-use crate::resource::RapierMultibodyJointSet;
-use crate::resource::RapierNarrowPhase;
-use crate::resource::RapierPipeline;
-use crate::resource::RapierSoftBodies;
+// use crate::resource::RapierBodies;
+// use crate::resource::RapierBroadPhase;
+// use crate::resource::RapierCCDSolver;
+// use crate::resource::RapierColliders;
+// use crate::resource::RapierImpulseJointSet;
+// use crate::resource::RapierIntegrationParameters;
+// use crate::resource::RapierIslandManager;
+// use crate::resource::RapierMultibodyJointSet;
+// use crate::resource::RapierNarrowPhase;
+// use crate::resource::RapierPipeline;
+// use crate::resource::RapierSoftBodies;
 use crate::resource::RulesR;
 use crate::resource::TerrainGenerator;
 use crate::resource::Timers;
@@ -31,7 +43,7 @@ use crate::system::cycle;
 use crate::system::factories;
 use crate::system::flush;
 use crate::system::new_players;
-use crate::system::physics;
+// use crate::system::physics;
 use crate::system::startup;
 use crate::system::sync;
 use crate::system::terrain;
@@ -45,7 +57,7 @@ pub fn run_game(
     let exit = App::new()
         .add_plugins(MinimalPlugins)
         .add_systems(Startup, startup)
-        .add_systems(FixedFirst, physics)
+        .add_systems(FixedFirst, physics::cycle)
         .add_systems(
             FixedUpdate,
             (cycle, new_players, terrain, actions, factories, sync, flush).chain(),

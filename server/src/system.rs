@@ -1,17 +1,14 @@
 use bevy::prelude::*;
 use bevy_app::AppExit;
 use crossbeam_channel::TryRecvError;
-use rapier2d::{
-    dynamics::RigidBodyBuilder,
-    geometry::ColliderBuilder,
-    math::{Vec2, Vector},
-};
+use rapier2d::{dynamics::RigidBodyBuilder, geometry::ColliderBuilder, math::Vec2};
 use std::num::NonZero;
 use std::time::Duration;
 use tokio::time::Instant;
 use tracing::debug;
 use tracing::{info, warn};
 
+use crate::physics::{RapierBodies, RapierColliders};
 use crate::{
     component::{
         Beacon, Factory, HasExtended, Id, Kind, Owned, PlayerResources, RapierObject, ZoneExtension,
@@ -20,10 +17,7 @@ use crate::{
     player::OnlinePlayer,
     protocol,
     resource::{
-        ControlsR, NewPlayerReceiver, Players, RapierBodies, RapierBroadPhase, RapierCCDSolver,
-        RapierColliders, RapierImpulseJointSet, RapierIntegrationParameters, RapierIslandManager,
-        RapierMultibodyJointSet, RapierNarrowPhase, RapierPipeline, RapierSoftBodies, RulesR,
-        TerrainGenerator, Timers, TransportStopper,
+        ControlsR, NewPlayerReceiver, Players, RulesR, TerrainGenerator, Timers, TransportStopper,
     },
 };
 
@@ -296,36 +290,6 @@ pub(crate) fn factories(
             factory.cooldown -= rules.0.tick_duration;
         }
     }
-}
-
-pub(crate) fn physics(
-    rapier_integration_parameters: Res<RapierIntegrationParameters>,
-    mut rapier_island_manager: ResMut<RapierIslandManager>,
-    mut rapier_broad_phase: ResMut<RapierBroadPhase>,
-    mut rapier_narrow_phase: ResMut<RapierNarrowPhase>,
-    mut rapier_impulse_joint_set: ResMut<RapierImpulseJointSet>,
-    mut rapier_multibody_joint_set: ResMut<RapierMultibodyJointSet>,
-    mut rapier_ccd_solver: ResMut<RapierCCDSolver>,
-    mut rapier_pipeline: ResMut<RapierPipeline>,
-    mut rapier_bodies: ResMut<RapierBodies>,
-    mut rapier_colliders: ResMut<RapierColliders>,
-    mut rapier_softbodies: ResMut<RapierSoftBodies>,
-) {
-    rapier_pipeline.0.step(
-        Vector::new(0., 0.),
-        &rapier_integration_parameters.0,
-        &mut rapier_island_manager.0,
-        &mut rapier_broad_phase.0,
-        &mut rapier_narrow_phase.0,
-        &mut rapier_bodies.0,
-        &mut rapier_colliders.0,
-        &mut rapier_impulse_joint_set.0,
-        &mut rapier_multibody_joint_set.0,
-        &mut rapier_softbodies.0,
-        &mut rapier_ccd_solver.0,
-        &(),
-        &(),
-    );
 }
 
 pub(crate) fn sync(
