@@ -44,6 +44,7 @@ func connect_to_server(nickname: String):
 	ui.connect_panel.visible = false
 	ui.info_label.text = "Connecting to %s" % [uri]
 
+func sprite_on_mouse_entered():
 func next_play_packet():
 	var packet = socket.get_packet()
 	if !socket.was_string_packet():
@@ -85,6 +86,10 @@ func next_play_packet():
 					game_sprite.texture = beacon_texture
 				else:
 					printerr("Unknown kind")
+				var area = Area2D.new()
+				var shape = RectangleShape2D
+				area.add_child(shape)
+				area.connect("MouseEntered", sprite_on_mouse_entered)
 				var node = Node2D.new()
 
 				node.add_child(game_sprite)
@@ -124,6 +129,7 @@ func handle_net():
 		root.camera.position = Vector2(auth_response.response.authentication.spawn[0], auth_response.response.authentication.spawn[1])
 		state = NetState.PLAYING
 		ui.game_panel.visible = true
+		ui.factory_panel.visible = true
 	elif state == NetState.PLAYING:
 		while socket.get_available_packet_count() > 0:
 			next_play_packet()

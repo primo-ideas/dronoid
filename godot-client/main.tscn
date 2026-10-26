@@ -110,10 +110,10 @@ layout_mode = 1
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -192.0
-offset_top = 44.29
-offset_right = -42.00049
-offset_bottom = 444.29
+offset_left = -202.0
+offset_top = 50.0
+offset_right = -52.00049
+offset_bottom = 450.0
 grow_horizontal = 0
 
 [node name="VBoxContainer" type="VBoxContainer" parent="UI/UI/PanelContainer" unique_id=1950232795]
@@ -123,5 +123,32 @@ layout_mode = 2
 layout_mode = 2
 text = "Spawn Factory"
 
+[node name="FactoryContextualMenu" type="PanelContainer" parent="UI/UI" unique_id=1289653421]
+visible = false
+custom_minimum_size = Vector2(100, 350)
+layout_mode = 1
+offset_left = 50.0
+offset_top = 50.0
+offset_right = 199.99951
+offset_bottom = 450.0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="UI/UI/FactoryContextualMenu" unique_id=852063066]
+layout_mode = 2
+
+[node name="FactoryId" type="Label" parent="UI/UI/FactoryContextualMenu/VBoxContainer" unique_id=1736312982]
+layout_mode = 2
+text = "Factory ID"
+horizontal_alignment = 1
+
+[node name="AutoSpawnButton" type="CheckButton" parent="UI/UI/FactoryContextualMenu/VBoxContainer" unique_id=749888235]
+layout_mode = 2
+text = "Auto"
+
+[node name="ManualSpawnButton" type="Button" parent="UI/UI/FactoryContextualMenu/VBoxContainer" unique_id=175914586]
+layout_mode = 2
+text = "Spawn"
+
 [connection signal="pressed" from="UI/UI/CenterContainer/ConnectPanel/HBoxContainer/ConnectButton" to="UI/UI" method="_on_connect_button_pressed"]
 [connection signal="pressed" from="UI/UI/PanelContainer/VBoxContainer/SpawnFactoryButton" to="UI/UI" method="_on_spawn_factory_button_pressed"]
+[connection signal="pressed" from="UI/UI/FactoryContextualMenu/VBoxContainer/AutoSpawnButton" to="UI/UI" method="_on_auto_spawn_button_pressed"]
+[connection signal="pressed" from="UI/UI/FactoryContextualMenu/VBoxContainer/ManualSpawnButton" to="UI/UI" method="_on_manual_spawn_button_pressed"]

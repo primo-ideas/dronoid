@@ -8,6 +8,7 @@ extends Control
 @onready var debug_label = $DebugLabel
 @onready var title = $Title
 @onready var game_panel = $PanelContainer
+@onready var factory_panel = $FactoryContextualMenu
 
 @onready var factory_texture = root.net.factory_texture
 
@@ -41,3 +42,9 @@ func leave_placing_mode():
 	root.world.remove_child(building_node)
 	building_node.queue_free()
 	placing_building = false
+
+func _on_manual_spawn_button_pressed() -> void:
+	net.send({"factorycontrol": "manualspawn"})
+
+func _on_auto_spawn_button_pressed() -> void:
+	pass # Replace with function body.
