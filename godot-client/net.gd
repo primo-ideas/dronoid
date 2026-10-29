@@ -8,10 +8,6 @@ enum NetState {
 
 @onready var root = get_tree().get_first_node_in_group("root")
 @onready var ui = root.ui
-@onready var mineral_texture = preload("res://assets/textures/mineral.png")
-@onready var dronoid_texture = preload("res://assets/textures/dronoid.png")
-@onready var factory_texture = preload("res://assets/textures/factory.png")
-@onready var beacon_texture = preload("res://assets/textures/beacon.png")
 
 var uri = "ws://127.0.0.1:8080/dronoid/ws"
 var state = null;
@@ -44,7 +40,6 @@ func connect_to_server(nickname: String):
 	ui.connect_panel.visible = false
 	ui.info_label.text = "Connecting to %s" % [uri]
 
-func sprite_on_mouse_entered():
 func next_play_packet():
 	var packet = socket.get_packet()
 	if !socket.was_string_packet():
@@ -69,40 +64,17 @@ func next_play_packet():
 				var existing_entity = entities.get(entity.id) as Node2D
 				existing_entity.position.x = entity.pos[0]
 				existing_entity.position.y = entity.pos[1]
-				# existing_entity.position.z = voxel.pos_z
 			else:
-				var game_sprite = Sprite2D.new()
-				var size = 1
-				if entity.kind == "Mineral":
-					game_sprite.texture = mineral_texture
-				elif entity.kind == "Dronoid":
-					size = 3
-					game_sprite.texture = dronoid_texture
-				elif entity.kind == "Factory":
-					size = 6
-					game_sprite.texture = factory_texture
-				elif entity.kind == "Beacon":
-					size = 9
-					game_sprite.texture = beacon_texture
-				else:
-					printerr("Unknown kind")
-				var area = Area2D.new()
-				var shape = RectangleShape2D
-				area.add_child(shape)
-				area.connect("MouseEntered", sprite_on_mouse_entered)
-				var node = Node2D.new()
+				var entity_node = Entity.create(entity.kind)
 
-				node.add_child(game_sprite)
+				root.world.add_child(entity_node)
 
-				root.world.add_child(node)
-				game_sprite.scale = (Vector2.ONE / game_sprite.texture.get_size()) * size
+				entity_node.position.x = entity.pos[0]
+				entity_node.position.y = entity.pos[1]
+				entity_node.name = "%s_%d" % [entity.kind, entity.id]
+				entities[entity.id] = entity_node
 
-				node.position.x = entity.pos[0]
-				node.position.y = entity.pos[1]
-				node.name = "%s_%d" % [entity.kind, entity.id]
-				entities[entity.id] = node
-
-func handle_net():
+func handle_transport():
 	if state == NetState.AUTHENTICATION_SENDING_REQUEST:
 		ui.info_label.text = "Authenticating"
 		socket.send_text(JSON.stringify(
@@ -118,9 +90,7 @@ func handle_net():
 			socket.close()
 			return
 		var packet_text = packet.get_string_from_utf8()
-		print(packet_text)
 		var auth_response = JSON.parse_string(packet_text)
-		print(auth_response)
 		if auth_response.response.authentication.result == false:
 			ui.info_label.text = "Server declined authentication: %s" % [auth_response.response.authentication.message]
 			socket.close()
@@ -140,7 +110,7 @@ func _process(_delta):
 	var socket_state = socket.get_ready_state()
 
 	if socket_state == WebSocketPeer.STATE_OPEN:
-		handle_net()
+		handle_transport()
 	elif socket_state == WebSocketPeer.STATE_CLOSED:
 		var code = socket.get_close_code()
 		ui.info_label.text = "WebSocket closed with code: %d" % [code]

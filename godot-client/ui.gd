@@ -10,7 +10,7 @@ extends Control
 @onready var game_panel = $PanelContainer
 @onready var factory_panel = $FactoryContextualMenu
 
-@onready var factory_texture = root.net.factory_texture
+@onready var factory_texture = Entity.factory_texture
 
 var placing_building = false
 var building_node: Node2D = null
